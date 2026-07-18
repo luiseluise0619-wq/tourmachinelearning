@@ -1,0 +1,31 @@
+# --- 환경변수 / 비밀키 ---
+.env
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- 데이터 (원본은 git에 올리지 않음, .gitkeep 만 유지) ---
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# --- OS / 에디터 ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- 모델 산출물 ---
+*.pkl
+*.joblib
+models/
