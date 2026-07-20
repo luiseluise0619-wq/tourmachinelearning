@@ -1,0 +1,301 @@
+<style>
+  :root {
+    --bg:#fbfaf8; --surface:#fff; --surface-2:#f4f2ec; --ink:#16201f; --muted:#55635f;
+    --faint:#8b978f; --line:#e6e2da; --teal:#0f6e78; --teal-ink:#0b545c; --teal-soft:#dceded;
+    --amber:#c9772a; --red:#b64f3d; --good:#2f8f6b; --warn:#c98a1e;
+    --shadow:0 1px 2px rgba(20,30,28,.04),0 6px 22px rgba(20,30,28,.06); --r:13px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0d1315;--surface:#141d1f;--surface-2:#182224;--ink:#e9efec;--muted:#9fafab;
+    --faint:#6a7c78;--line:#26302f;--teal:#56c6d1;--teal-ink:#8fe0e7;--teal-soft:#123236;
+    --amber:#e3a15c;--red:#e08066;--good:#57bd93;--warn:#e0b25b;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 30px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--bg:#fbfaf8;--surface:#fff;--surface-2:#f4f2ec;--ink:#16201f;--muted:#55635f;--faint:#8b978f;--line:#e6e2da;--teal:#0f6e78;--teal-ink:#0b545c;--teal-soft:#dceded;--amber:#c9772a;--red:#b64f3d;--good:#2f8f6b;--warn:#c98a1e;--shadow:0 1px 2px rgba(20,30,28,.04),0 6px 22px rgba(20,30,28,.06);}
+  :root[data-theme="dark"]{--bg:#0d1315;--surface:#141d1f;--surface-2:#182224;--ink:#e9efec;--muted:#9fafab;--faint:#6a7c78;--line:#26302f;--teal:#56c6d1;--teal-ink:#8fe0e7;--teal-soft:#123236;--amber:#e3a15c;--red:#e08066;--good:#57bd93;--warn:#e0b25b;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 30px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum";}
+  .num{font-variant-numeric:tabular-nums;}
+  .top{border-bottom:1px solid var(--line);padding:20px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .brand{font-weight:800;font-size:18px;letter-spacing:-.01em;}
+  .brand .d{color:var(--teal);}
+  .top .tag{font-size:12px;color:var(--teal-ink);background:var(--teal-soft);padding:4px 10px;border-radius:999px;font-weight:600;}
+  .top .sub{color:var(--faint);font-size:13px;margin-left:auto;}
+
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:0;align-items:start;}
+  @media (max-width:820px){.layout{grid-template-columns:1fr;}}
+
+  /* form */
+  .form{padding:22px 24px;border-right:1px solid var(--line);position:sticky;top:0;}
+  @media (max-width:820px){.form{position:static;border-right:none;border-bottom:1px solid var(--line);}}
+  .form h2{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 16px;}
+  .fld{margin-bottom:14px;}
+  .fld label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  .fld input[type=text],.fld input[type=number],.fld select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-size:14px;font-family:inherit;}
+  .fld input:focus,.fld select:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{font-size:12.5px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;background:var(--surface);color:var(--muted);transition:.12s;}
+  .chip.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600;}
+  @media (prefers-color-scheme:dark){.chip.on{color:#08201f;}}
+
+  /* report */
+  .report{padding:24px 28px 60px;}
+  .fest-name{font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0 0 3px;text-wrap:balance;}
+  .fest-meta{color:var(--faint);font-size:13px;margin-bottom:22px;}
+  .hcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .hgrid{display:flex;gap:26px;align-items:center;flex-wrap:wrap;}
+  .score-big{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--teal);}
+  .grade{display:inline-block;margin-top:8px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;}
+  .gaugewrap{flex:1;min-width:180px;}
+  .gauge{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--red),var(--warn),var(--good));position:relative;margin-top:8px;}
+  .gauge .mk{position:absolute;top:-5px;width:4px;height:22px;background:var(--ink);border-radius:2px;transform:translateX(-2px);box-shadow:0 0 0 2px var(--surface);}
+  .gauge-l{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:6px;}
+  .vsplit{display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;}
+  .vsplit .b .n{font-size:24px;font-weight:800;letter-spacing:-.02em;}
+  .vsplit .b .l{font-size:12px;color:var(--muted);}
+  .vsplit .b .n.dom{color:var(--ink);} .vsplit .b .n.frn{color:var(--amber);}
+
+  .sect-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin:24px 0 12px;}
+  .factors{display:flex;flex-direction:column;gap:9px;}
+  .frow{display:grid;grid-template-columns:96px 1fr 42px;align-items:center;gap:12px;}
+  .frow .fn{font-size:13px;color:var(--ink);}
+  .frow .ft{height:11px;background:var(--surface-2);border-radius:6px;overflow:hidden;}
+  .frow .ff{height:100%;background:linear-gradient(90deg,var(--teal-ink),var(--teal));border-radius:6px;transition:width .3s;}
+  .frow .fv{font-size:12.5px;color:var(--muted);text-align:right;}
+
+  .dist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+  .dist .cap{font-size:13px;color:var(--muted);margin-bottom:10px;}
+  .dist .cap b{color:var(--ink);}
+  svg{display:block;width:100%;height:auto;}
+  .risk{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-2);}
+  .risk .dot{width:10px;height:10px;border-radius:50%;}
+  .risk .txt{font-size:13.5px;}
+  .risk .pct{margin-left:auto;font-weight:800;font-size:18px;}
+
+  .fbcard{border-left:3px solid var(--amber);background:var(--surface-2);padding:11px 15px;border-radius:0 10px 10px 0;margin-bottom:9px;}
+  .fbcard .i{font-weight:700;font-size:14px;margin-bottom:2px;}
+  .fbcard .i .gain{color:var(--good);font-size:12.5px;margin-left:8px;}
+  .fbcard .a{font-size:13px;color:var(--muted);}
+  .mkt{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);}
+  .mkt .seg{font-size:15px;font-weight:700;margin-bottom:8px;}
+  .mkt .ch{display:inline-block;font-size:12.5px;background:var(--teal-soft);color:var(--teal-ink);padding:4px 10px;border-radius:7px;margin:3px 5px 3px 0;}
+  .kcard{margin-top:12px;font-size:13px;color:var(--muted);padding:12px 14px;background:var(--teal-soft);border-radius:10px;}
+  .kcard b{color:var(--teal-ink);}
+  .disclaim{font-size:11.5px;color:var(--faint);margin-top:26px;border-top:1px solid var(--line);padding-top:14px;}
+</style>
+
+<div class="top">
+  <span class="brand">🎪 Fest<span class="d">Cast</span></span>
+  <span class="tag">축제 흥행 예보</span>
+  <span class="sub">기획안을 입력하면 흥행도·방문자·쏠림위험·보완피드백을 실시간 예보 · 데모</span>
+</div>
+
+<div class="layout">
+  <form class="form" id="form" autocomplete="off">
+    <h2>기획안 입력</h2>
+    <div class="fld"><label>축제명</label><input type="text" id="name" value="○○ 가을 별빛 축제"></div>
+    <div class="row2">
+      <div class="fld"><label>지역</label><select id="region"></select></div>
+      <div class="fld"><label>개최 월</label><select id="month"></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>기간(일)</label><input type="number" id="dur" value="3" min="1" max="30"></div>
+      <div class="fld"><label>회차</label><input type="number" id="editions" value="5" min="1"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>예산(백만원)</label><input type="number" id="budget" value="500" min="0"></div>
+      <div class="fld"><label>전년 방문객(명)</label><input type="number" id="prev" value="" placeholder="없으면 비움"></div>
+    </div>
+    <div class="fld"><label>운영 주체</label><select id="operator"></select></div>
+    <div class="row2">
+      <div class="fld"><label>수용인원(쏠림)</label><input type="number" id="capacity" value="" placeholder="선택"></div>
+      <div class="fld"><label>강수확률(%)</label><input type="number" id="rain" value="" placeholder="자동" min="0" max="100"></div>
+    </div>
+    <div class="fld"><label>일정·장소</label><div class="chips" id="flags1">
+      <span class="chip on" data-k="weekend">주말 포함</span>
+      <span class="chip on" data-k="outdoor">실외</span>
+      <span class="chip" data-k="holiday">연휴 인접</span>
+      <span class="chip" data-k="free">무료 입장</span>
+    </div></div>
+    <div class="fld"><label>프로그램 구성</label><div class="chips" id="flags2">
+      <span class="chip" data-k="experience">체험</span>
+      <span class="chip on" data-k="food">먹거리</span>
+      <span class="chip on" data-k="performance">공연</span>
+      <span class="chip" data-k="celebrity">셀럽</span>
+    </div></div>
+    <div class="fld"><label>글로벌</label><div class="chips" id="flags3">
+      <span class="chip" data-k="kcontent">K콘텐츠 연계</span>
+    </div></div>
+  </form>
+
+  <div class="report" id="report"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var REGION_POP={"서울":9400000,"부산":3300000,"대구":2370000,"인천":3000000,"광주":1420000,"대전":1440000,"울산":1100000,"세종":390000,"경기":13600000,"강원":1520000,"충북":1590000,"충남":2130000,"전북":1750000,"전남":1800000,"경북":2550000,"경남":3250000,"제주":670000};
+  var CLIM={1:[-1,.15],2:[2,.18],3:[7,.22],4:[13,.25],5:[18,.28],6:[22,.40],7:[25,.55],8:[26,.50],9:[21,.35],10:[15,.22],11:[8,.20],12:[1,.16]};
+  var GATEWAY={"서울":1,"인천":1,"부산":1,"제주":1};
+  var DOM_AGE={"서울":"20s","경기":"30s","인천":"30s","부산":"30s","대구":"40s","광주":"20s","대전":"20s","울산":"40s","세종":"30s","강원":"50s","충북":"50s","충남":"50s","전북":"60s+","전남":"60s+","경북":"60s+","경남":"50s","제주":"40s"};
+  var PLAYBOOK={"10s":{c:["인스타/틱톡 릴스","학교 연계"],t:"트렌디·포토스팟",p:"포토존·SNS 이벤트"},"20s":{c:["인스타그램","네이버 지역카페","대학 커뮤니티"],t:"감성·체험 중심",p:"체험부스·야간공연·플리마켓"},"30s":{c:["인스타그램","맘카페","당근 지역광고"],t:"가족·아이 동반 안심",p:"키즈존·체험·먹거리"},"40s":{c:["맘카페","지역 현수막","카카오 지역채널"],t:"가족 나들이·먹거리",p:"먹거리장터·가족 체험"},"50s":{c:["지역 신문/방송","현수막","관광버스 연계"],t:"향수·문화·건강",p:"공연·전통문화·먹거리"},"60s+":{c:["지역 방송/라디오","복지관 연계","현수막"],t:"건강·전통·편의",p:"전통공연·휴게공간·셔틀"}};
+  var OPERATORS=["재단(관광/문화/예술)","정부/지자체","지자체 위원회","민간 사업체","민간 협/단체"];
+  var clip=function(x,a,b){a=a==null?0:a;b=b==null?100:b;return Math.max(a,Math.min(b,x));};
+
+  function weatherFit(o,temp,rain){var tp=Math.min(Math.abs(temp-20)*2.5,60);var rw=o?60:20;return clip(100-tp-rain*rw);}
+  function demandScore(pop,region){var ps=clip((Math.log10(Math.max(pop,1))-4)/2*100)*0.5;var near=(region==="서울"||region==="경기"||region==="인천");var access=(near?12:4)+8+0+5;var infra=12;var comp=6;return clip(ps+access+infra-comp);}
+  function programScore(f,dur){var np=3+(f.experience?1:0)+(f.food?1:0)+(f.performance?1:0)+(f.celebrity?1:0);var div=Math.min(np,10)/10*30;var rich=(f.experience?10:0)+(f.food?8:0)+(f.performance?12:0);var cel=f.celebrity?15:0;var free=f.free?10:0;var d=Math.min(dur,4)/4*15;return clip(div+rich+cel+free+d);}
+  function timingScore(month,f){var wk=f.weekend?25:8;var peak=([4,5,9,10].indexOf(month)>=0)?30:([3,6,8,11].indexOf(month)>=0?18:8);var hol=f.holiday?15:0;var vac=([1,2,7,8].indexOf(month)>=0)?10:0;return clip(wk+peak+hol+vac+20);}
+  function reputationScore(editions,prev,grade){grade=grade||"none";var g=({global:40,culture:30,expected:20})[grade]||8;var ed=Math.min(editions,10)/10*20;var pv=prev>0?clip((Math.log10(Math.max(prev,1))-2)/3*20,0,20):8;return clip(g+ed+pv+0);}
+  var W={weather:.20,demand:.25,program:.20,timing:.15,reputation:.20};
+
+  function appeal(inp,temp,rain){
+    var f={weather:weatherFit(inp.outdoor,temp,rain),demand:demandScore(inp.pop,inp.region),program:programScore(inp.flags,inp.dur),timing:timingScore(inp.month,inp.flags),reputation:reputationScore(inp.editions,inp.prev,"none")};
+    var s=0;for(var k in W)s+=f[k]*W[k];
+    return {score:Math.round(s*10)/10,f:f};
+  }
+  function estVisitors(inp,score){
+    var base;
+    if(inp.prev>0){base=inp.prev*(0.7+0.6*score/100);}
+    else{var rr=0.005+0.045*(score/100);base=inp.pop*rr;if(inp.flags.weekend)base*=1.3;base*=(1+0.15*Math.min(inp.dur-1,3));}
+    return Math.round(base);
+  }
+  function split(inp,score){
+    var total=estVisitors(inp,score);
+    var gw=GATEWAY[inp.region]?1.5:1;var exch=clip(1380/1300,0.8,1.4);
+    var fwo=total*0.03*gw*exch;var boost=4*(0.6+0.4*score/100);var fwith=fwo*boost;
+    var frn=inp.flags.kcontent?fwith:fwo;var dom=Math.max(total-frn,0);
+    return {total:total,dom:Math.round(dom),frn:Math.round(frn),fwo:Math.round(fwo),fwith:Math.round(fwith)};
+  }
+  // seeded rng for stable charts
+  function rng(seed){return function(){seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+  function gauss(r,m,sd){var u=1-r(),v=r();return m+sd*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  function forecast(inp,temp,rain,capacity){
+    var r=rng(42),N=2500,counts=[];
+    for(var i=0;i<N;i++){
+      var t=gauss(r,temp,3),rained=r()<rain?1:0,noise=Math.exp(gauss(r,0,0.15));
+      var s=appeal(inp,t,rained).score;
+      counts.push(Math.max(estVisitors(inp,s)*noise,0));
+    }
+    counts.sort(function(a,b){return a-b;});
+    var pct=function(p){return counts[Math.floor(p/100*(N-1))];};
+    var mean=counts.reduce(function(a,b){return a+b;},0)/N;
+    var over=capacity?counts.filter(function(c){return c>capacity;}).length/N:null;
+    return {counts:counts,mean:mean,p10:pct(10),p50:pct(50),p90:pct(90),over:over};
+  }
+
+  function feedback(inp,temp,rain,ap){
+    var fb=[],f=ap.f,fl=inp.flags;
+    if(f.weather<60){
+      if(fl.outdoor&&rain>=0.4){var g=Math.round((weatherFit(false,temp,rain)-f.weather)*W.weather*10)/10;fb.push(["날씨 리스크","강수확률 "+Math.round(rain*100)+"% — 실외 시 급락 위험","우천 대비 실내 대체공간·천막 확보, 우천 프로그램",g>0?g:null]);}
+      if(Math.abs(temp-20)>8)fb.push(["기온 부적합","개최 시기 평균 "+temp.toFixed(0)+"℃ — 쾌적도 저하","그늘막·냉난방 쉼터, 개최 시간대 조정",null]);
+    }
+    if(!fl.weekend){var g2=Math.round((timingScore(inp.month,Object.assign({},fl,{weekend:true}))-f.timing)*W.timing*10)/10;fb.push(["평일 개최","평일은 방문 접근성 낮음","주말·공휴일 포함 일정으로 조정",g2>0?g2:null]);}
+    if([1,2,7,12].indexOf(inp.month)>=0)fb.push(["비수기/기상 리스크","혹한·혹서·장마 시기 개최","봄(4~5)·가을(9~10) 성수기 이동 검토",null]);
+    if(!fl.holiday)fb.push(["연휴 미활용","연휴와 연계 안 됨 — 방문 유인 약함","인접 공휴일·징검다리 연휴에 배치",null]);
+    if(f.program<60){var miss=[];if(!fl.experience)miss.push("체험형");if(!fl.food)miss.push("먹거리");if(!fl.performance)miss.push("공연/무대");if(!fl.celebrity)miss.push("셀럽 라인업");if(miss.length)fb.push(["프로그램 빈약","부족: "+miss.join(", "),miss[0]+" 우선 보강 — 체류·재방문 유도",null]);}
+    if(!fl.free)fb.push(["입장료 장벽","유료는 초기 방문 유인 저하","무료화 또는 사전예매 할인·패키지",null]);
+    if(f.demand<50)fb.push(["주변 수요 부족","인구·접근성 낮음","인근 도시 광역 홍보 + 셔틀/관광버스 연계",null]);
+    if(f.reputation<45)fb.push(["평판·홍보 부족","신규·저인지도 또는 홍보 투입 부족","문화관광축제 지정 신청 + 사전예매·SNS 홍보 강화",null]);
+    if(!fl.kcontent){var sp=split(inp,ap.score);fb.push(["외국인 유치 기회","현재 외국인 "+sp.frn.toLocaleString()+"명 — K콘텐츠 미연계","인근 드라마 촬영지·K팝 연계 + 다국어 홍보",null,"외국인 약 "+(sp.fwith-sp.fwo).toLocaleString()+"명 추가 기대"]);}
+    return fb;
+  }
+
+  function gradeInfo(s){
+    if(s>=80)return["A · 흥행 유력","var(--good)","rgba(47,143,107,.15)"];
+    if(s>=65)return["B · 양호","var(--teal)","var(--teal-soft)"];
+    if(s>=50)return["C · 보통·보완 필요","var(--warn)","rgba(201,138,30,.15)"];
+    return["D · 재검토 권장","var(--red)","rgba(182,79,61,.15)"];
+  }
+  function fmt(n){return Math.round(n).toLocaleString();}
+
+  function histSvg(fc){
+    var c=fc.counts,N=c.length,min=c[0],max=c[N-1];
+    var span=max-min||1;var bw=Math.max(Math.round(span/28/100)*100,100);
+    var lo=Math.floor(min/bw)*bw,hi=Math.ceil(max/bw)*bw,nb=Math.round((hi-lo)/bw);
+    var bins=new Array(nb).fill(0);
+    for(var i=0;i<N;i++){var idx=Math.min(Math.floor((c[i]-lo)/bw),nb-1);bins[idx]++;}
+    var mx=Math.max.apply(null,bins);
+    var Wd=680,H=180,pad=28,bwpx=(Wd-pad*2)/nb;
+    var s='<svg viewBox="0 0 '+Wd+' '+(H+30)+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="방문자 확률분포">';
+    for(var b=0;b<nb;b++){
+      var edge=lo+b*bw,inBand=(edge>=fc.p10-bw&&edge<=fc.p90);
+      var h=bins[b]/mx*H,x=pad+b*bwpx,y=H-h+10;
+      s+='<rect x="'+(x+1).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bwpx-2).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" fill="'+(inBand?'var(--teal)':'var(--line)')+'"/>';
+    }
+    // p50 marker
+    var mkx=pad+((fc.p50-lo)/bw)*bwpx;
+    s+='<line x1="'+mkx.toFixed(1)+'" y1="6" x2="'+mkx.toFixed(1)+'" y2="'+(H+10)+'" stroke="var(--amber)" stroke-width="2" stroke-dasharray="3 3"/>';
+    s+='<text x="'+mkx.toFixed(1)+'" y="4" fill="var(--amber)" font-size="11" text-anchor="middle">중앙값</text>';
+    s+='<text x="'+pad+'" y="'+(H+26)+'" fill="var(--faint)" font-size="11">'+fmt(lo)+'명</text>';
+    s+='<text x="'+(Wd-pad)+'" y="'+(H+26)+'" fill="var(--faint)" font-size="11" text-anchor="end">'+fmt(hi)+'명</text>';
+    s+='</svg>';
+    return s;
+  }
+
+  function render(){
+    var g=function(id){return document.getElementById(id);};
+    var region=g("region").value,month=parseInt(g("month").value,10);
+    var flags={};document.querySelectorAll(".chip").forEach(function(c){flags[c.dataset.k]=c.classList.contains("on");});
+    var rainOv=g("rain").value,cl=CLIM[month];
+    var temp=cl[0],rain=rainOv!==""?clip(parseFloat(rainOv),0,100)/100:cl[1];
+    var inp={region:region,month:month,dur:Math.max(parseInt(g("dur").value||1,10),1),editions:Math.max(parseInt(g("editions").value||1,10),1),
+      budget:parseFloat(g("budget").value||0),prev:parseFloat(g("prev").value||0)||0,pop:REGION_POP[region]||1000000,outdoor:flags.outdoor,flags:flags};
+    var cap=g("capacity").value!==""?parseFloat(g("capacity").value):null;
+
+    var ap=appeal(inp,temp,rain),gi=gradeInfo(ap.score),sp=split(inp,ap.score),fc=forecast(inp,temp,rain,cap),fbs=feedback(inp,temp,rain,ap);
+    var domAge=DOM_AGE[region]||"40s",pb=PLAYBOOK[domAge];
+
+    var facLbl={weather:"날씨",demand:"수요·입지",program:"프로그램",timing:"시기",reputation:"평판·이력"};
+    var facHtml="";["demand","reputation","program","timing","weather"].forEach(function(k){
+      facHtml+='<div class="frow"><span class="fn">'+facLbl[k]+'</span><span class="ft"><span class="ff" style="width:'+ap.f[k].toFixed(0)+'%"></span></span><span class="fv num">'+ap.f[k].toFixed(0)+'</span></div>';
+    });
+
+    var fbHtml="";fbs.forEach(function(x){
+      fbHtml+='<div class="fbcard"><div class="i">'+x[1-1]+(x[3]?'<span class="gain">+'+x[3]+'점</span>':'')+(x[4]?'<span class="gain">'+x[4]+'</span>':'')+'</div><div class="a">'+x[2]+'</div></div>';
+    });
+
+    var riskHtml="";
+    if(fc.over!=null){
+      var lvl=fc.over>=.3?["높음","var(--red)"]:fc.over>=.1?["주의","var(--warn)"]:["낮음","var(--good)"];
+      riskHtml='<div class="risk"><span class="dot" style="background:'+lvl[1]+'"></span><span class="txt">수용인원 <b>'+fmt(cap)+'명</b> 초과(쏠림) 위험 · <b style="color:'+lvl[1]+'">'+lvl[0]+'</b></span><span class="pct num" style="color:'+lvl[1]+'">'+(fc.over*100).toFixed(0)+'%</span></div>';
+    }
+
+    var kHtml="";
+    if(!flags.kcontent){var up=sp.fwith-sp.fwo;kHtml='<div class="kcard">🌏 <b>K콘텐츠 연계 시</b> 외국인 방문 <b>'+fmt(sp.fwo)+'명 → '+fmt(sp.fwith)+'명</b> (+'+fmt(up)+'명) 기대 — 왼쪽 "K콘텐츠 연계"를 켜보세요.</div>';}
+    else{kHtml='<div class="kcard">🌏 <b>K콘텐츠 연계 반영됨</b> — 외국인 예상 '+fmt(sp.frn)+'명 ('+(sp.total?(sp.frn/sp.total*100).toFixed(1):0)+'%)</div>';}
+
+    g("report").innerHTML=
+      '<h1 class="fest-name">'+(g("name").value||"축제")+'</h1>'+
+      '<div class="fest-meta">'+region+' · '+month+'월 · '+inp.dur+'일 · '+inp.editions+'회차 · 평년 '+temp.toFixed(0)+'℃ / 강수 '+Math.round(rain*100)+'%</div>'+
+      '<div class="hcard"><div class="hgrid">'+
+        '<div><div class="score-big num">'+ap.score.toFixed(0)+'</div><span class="grade" style="color:'+gi[1]+';background:'+gi[2]+'">'+gi[0]+'</span></div>'+
+        '<div class="gaugewrap"><div style="font-size:12px;color:var(--faint)">흥행도 (0~100)</div><div class="gauge"><div class="mk" style="left:'+ap.score+'%"></div></div><div class="gauge-l"><span>재검토</span><span>보통</span><span>유력</span></div>'+
+          '<div class="vsplit" style="margin-top:16px"><div class="b"><div class="n dom num">'+fmt(sp.total)+'</div><div class="l">예상 방문객(명)</div></div><div class="b"><div class="n dom num">'+fmt(sp.dom)+'</div><div class="l">내국인</div></div><div class="b"><div class="n frn num">'+fmt(sp.frn)+'</div><div class="l">외국인</div></div></div>'+
+        '</div></div></div>'+
+      '<div class="sect-t">흥행 요인 분해</div><div class="factors">'+facHtml+'</div>'+
+      '<div class="sect-t">방문자 확률 예보</div><div class="dist"><div class="cap">기대 <b class="num">'+fmt(fc.mean)+'명</b> · 80% 확률로 <b class="num">'+fmt(fc.p10)+'~'+fmt(fc.p90)+'명</b></div>'+histSvg(fc)+riskHtml+'</div>'+
+      '<div class="sect-t">기획 보완 피드백 <span style="color:var(--faint);font-weight:400">'+fbs.length+'건</span></div>'+(fbHtml||'<div class="fbcard" style="border-color:var(--good)"><div class="a">약점이 크게 없습니다 — 좋은 기획안입니다.</div></div>')+
+      '<div class="sect-t">마케팅 추천</div><div class="mkt"><div class="seg">주 타깃: '+domAge+' · '+pb.t+'</div>'+
+        '<div>'+pb.c.map(function(c){return '<span class="ch">'+c+'</span>';}).join("")+'</div>'+
+        '<div style="margin-top:8px;font-size:13px;color:var(--muted)">추천 프로그램: '+pb.p+'</div>'+kHtml+'</div>'+
+      '<div class="disclaim">규칙 기반 프로토타입 · 재개최 축제는 전년 실측을 앵커로 예측 · 데이터: 문체부 전국축제 1,266건 실측 학습. 실서비스는 기상청·주민등록·네이버 트렌드 API 연동 예정.</div>';
+  }
+
+  // init controls
+  var rs=document.getElementById("region");
+  Object.keys(REGION_POP).forEach(function(r){var o=document.createElement("option");o.value=r;o.textContent=r;rs.appendChild(o);});
+  rs.value="경기";
+  var ms=document.getElementById("month");
+  for(var m=1;m<=12;m++){var o=document.createElement("option");o.value=m;o.textContent=m+"월";ms.appendChild(o);}
+  ms.value=10;
+  var os=document.getElementById("operator");
+  OPERATORS.forEach(function(x){var o=document.createElement("option");o.value=x;o.textContent=x;os.appendChild(o);});
+
+  document.querySelectorAll(".chip").forEach(function(c){c.addEventListener("click",function(){c.classList.toggle("on");render();});});
+  document.getElementById("form").addEventListener("input",render);
+  document.getElementById("form").addEventListener("change",render);
+  render();
+})();
+</script>
