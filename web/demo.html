@@ -38,6 +38,19 @@
   .chip{font-size:12.5px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;background:var(--surface);color:var(--muted);transition:.12s;}
   .chip.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600;}
   @media (prefers-color-scheme:dark){.chip.on{color:#08201f;}}
+  .chip.preset{border-style:dashed;border-color:var(--amber);color:var(--amber);font-weight:600;}
+  .chip.preset:hover{background:var(--amber);color:#fff;}
+  @media (prefers-color-scheme:dark){.chip.preset:hover{color:#1a1207;}}
+  details.ev{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);}
+  details.ev summary{cursor:pointer;padding:13px 16px;font-size:13.5px;font-weight:700;color:var(--teal-ink);list-style:none;}
+  details.ev summary::-webkit-details-marker{display:none;}
+  details.ev summary::before{content:"▸ ";color:var(--teal);}
+  details.ev[open] summary::before{content:"▾ ";}
+  details.ev .body{padding:0 16px 16px;}
+  .evrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:13px;align-items:center;}
+  .evrow .e{font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;}
+  .evrow .p{font-size:11px;color:var(--amber);font-weight:700;}
+  .frow .fn{cursor:help;border-bottom:1px dotted var(--faint);}
 
   /* report */
   .report{padding:24px 28px 60px;}
@@ -94,6 +107,11 @@
 <div class="layout">
   <form class="form" id="form" autocomplete="off">
     <h2>기획안 입력</h2>
+    <div class="fld"><label>실제 축제 불러오기 (예시)</label><div class="chips" id="presets">
+      <span class="chip preset" data-p="mud">보령머드축제</span>
+      <span class="chip preset" data-p="ice">화천산천어축제</span>
+      <span class="chip preset" data-p="small">신규 소규모 축제</span>
+    </div></div>
     <div class="fld"><label>축제명</label><input type="text" id="name" value="○○ 가을 별빛 축제"></div>
     <div class="row2">
       <div class="fld"><label>지역</label><select id="region"></select></div>
@@ -141,6 +159,14 @@
   var DOM_AGE={"서울":"20s","경기":"30s","인천":"30s","부산":"30s","대구":"40s","광주":"20s","대전":"20s","울산":"40s","세종":"30s","강원":"50s","충북":"50s","충남":"50s","전북":"60s+","전남":"60s+","경북":"60s+","경남":"50s","제주":"40s"};
   var PLAYBOOK={"10s":{c:["인스타/틱톡 릴스","학교 연계"],t:"트렌디·포토스팟",p:"포토존·SNS 이벤트"},"20s":{c:["인스타그램","네이버 지역카페","대학 커뮤니티"],t:"감성·체험 중심",p:"체험부스·야간공연·플리마켓"},"30s":{c:["인스타그램","맘카페","당근 지역광고"],t:"가족·아이 동반 안심",p:"키즈존·체험·먹거리"},"40s":{c:["맘카페","지역 현수막","카카오 지역채널"],t:"가족 나들이·먹거리",p:"먹거리장터·가족 체험"},"50s":{c:["지역 신문/방송","현수막","관광버스 연계"],t:"향수·문화·건강",p:"공연·전통문화·먹거리"},"60s+":{c:["지역 방송/라디오","복지관 연계","현수막"],t:"건강·전통·편의",p:"전통공연·휴게공간·셔틀"}};
   var OPERATORS=["재단(관광/문화/예술)","정부/지자체","지자체 위원회","민간 사업체","민간 협/단체"];
+  var PRESETS={
+    mud:{name:"제29회 보령머드축제",region:"충남",month:7,dur:17,editions:29,budget:3500,prev:1690359,operator:"재단(관광/문화/예술)",capacity:2000000,rain:"",flags:{weekend:1,outdoor:1,holiday:0,free:1,experience:1,food:1,performance:1,celebrity:0,kcontent:0}},
+    ice:{name:"2026 얼음나라 화천 산천어축제",region:"강원",month:1,dur:23,editions:24,budget:4760,prev:1869785,operator:"재단(관광/문화/예술)",capacity:2500000,rain:"",flags:{weekend:1,outdoor:1,holiday:0,free:1,experience:1,food:1,performance:0,celebrity:0,kcontent:0}},
+    small:{name:"○○ 신규 마을 어울림 축제",region:"전남",month:2,dur:1,editions:1,budget:30,prev:0,operator:"민간 협/단체",capacity:"",rain:"",flags:{weekend:0,outdoor:1,holiday:0,free:1,experience:0,food:1,performance:0,celebrity:0,kcontent:0}}
+  };
+  // 데이터 근거 (docs/model_evidence.md · 전국 1,266건 회귀)
+  var EVID=[["예산","10배당 +327%","***"],["지역·서울","+218%","***"],["개최주기·매년","+83%","*"],["운영·민간사업체","-74%","**"],["유형·자연생태","+51%","**"],["기간","+1일당 +1.9%","***"],["회차","+1회당 +0.7%","***"]];
+  var FTIP={weather:"평년 기온·강수 기반. 실외일수록 강수 페널티↑",demand:"주변 인구·접근성·경쟁 (데이터: 서울 +218%, 대도시 프리미엄 p<0.001)",program:"다양성·구성·셀럽·무료·기간 (데이터: 기간 +1.9%/일 p<0.001)",timing:"주말·성수기·연휴·방학 (데이터: 매년개최 +83% p<0.05)",reputation:"지정등급·회차·전년방문·홍보 (데이터: 회차 +0.7%/회, 민간운영 -74%)"};
   var clip=function(x,a,b){a=a==null?0:a;b=b==null?100:b;return Math.max(a,Math.min(b,x));};
 
   function weatherFit(o,temp,rain){var tp=Math.min(Math.abs(temp-20)*2.5,60);var rw=o?60:20;return clip(100-tp-rain*rw);}
@@ -249,8 +275,11 @@
 
     var facLbl={weather:"날씨",demand:"수요·입지",program:"프로그램",timing:"시기",reputation:"평판·이력"};
     var facHtml="";["demand","reputation","program","timing","weather"].forEach(function(k){
-      facHtml+='<div class="frow"><span class="fn">'+facLbl[k]+'</span><span class="ft"><span class="ff" style="width:'+ap.f[k].toFixed(0)+'%"></span></span><span class="fv num">'+ap.f[k].toFixed(0)+'</span></div>';
+      facHtml+='<div class="frow"><span class="fn" title="'+FTIP[k]+'">'+facLbl[k]+'</span><span class="ft"><span class="ff" style="width:'+ap.f[k].toFixed(0)+'%"></span></span><span class="fv num">'+ap.f[k].toFixed(0)+'</span></div>';
     });
+    var evHtml='<details class="ev"><summary>데이터 근거 · 전국 1,266건 회귀 (계수·유의성)</summary><div class="body">'+
+      EVID.map(function(e){return '<div class="evrow"><span>'+e[0]+'</span><span class="e">'+e[1]+'</span><span class="p">'+e[2]+'</span></div>';}).join("")+
+      '<div style="font-size:11px;color:var(--faint);margin-top:8px">*** p&lt;0.001 · ** p&lt;0.01 · * p&lt;0.05 — 흥행도 요인 가중치의 근거. 예산↔방문객은 양방향(규모 대리지표).</div></div></details>';
 
     var fbHtml="";fbs.forEach(function(x){
       fbHtml+='<div class="fbcard"><div class="i">'+x[1-1]+(x[3]?'<span class="gain">+'+x[3]+'점</span>':'')+(x[4]?'<span class="gain">'+x[4]+'</span>':'')+'</div><div class="a">'+x[2]+'</div></div>';
@@ -274,7 +303,7 @@
         '<div class="gaugewrap"><div style="font-size:12px;color:var(--faint)">흥행도 (0~100)</div><div class="gauge"><div class="mk" style="left:'+ap.score+'%"></div></div><div class="gauge-l"><span>재검토</span><span>보통</span><span>유력</span></div>'+
           '<div class="vsplit" style="margin-top:16px"><div class="b"><div class="n dom num">'+fmt(sp.total)+'</div><div class="l">예상 방문객(명)</div></div><div class="b"><div class="n dom num">'+fmt(sp.dom)+'</div><div class="l">내국인</div></div><div class="b"><div class="n frn num">'+fmt(sp.frn)+'</div><div class="l">외국인</div></div></div>'+
         '</div></div></div>'+
-      '<div class="sect-t">흥행 요인 분해</div><div class="factors">'+facHtml+'</div>'+
+      '<div class="sect-t">흥행 요인 분해 <span style="color:var(--faint);font-weight:400">· 요인명에 마우스=근거</span></div><div class="factors">'+facHtml+'</div>'+evHtml+
       '<div class="sect-t">방문자 확률 예보</div><div class="dist"><div class="cap">기대 <b class="num">'+fmt(fc.mean)+'명</b> · 80% 확률로 <b class="num">'+fmt(fc.p10)+'~'+fmt(fc.p90)+'명</b></div>'+histSvg(fc)+riskHtml+'</div>'+
       '<div class="sect-t">기획 보완 피드백 <span style="color:var(--faint);font-weight:400">'+fbs.length+'건</span></div>'+(fbHtml||'<div class="fbcard" style="border-color:var(--good)"><div class="a">약점이 크게 없습니다 — 좋은 기획안입니다.</div></div>')+
       '<div class="sect-t">마케팅 추천</div><div class="mkt"><div class="seg">주 타깃: '+domAge+' · '+pb.t+'</div>'+
@@ -293,7 +322,25 @@
   var os=document.getElementById("operator");
   OPERATORS.forEach(function(x){var o=document.createElement("option");o.value=x;o.textContent=x;os.appendChild(o);});
 
-  document.querySelectorAll(".chip").forEach(function(c){c.addEventListener("click",function(){c.classList.toggle("on");render();});});
+  function applyPreset(key){
+    var p=PRESETS[key];if(!p)return;
+    document.getElementById("name").value=p.name;
+    document.getElementById("region").value=p.region;
+    document.getElementById("month").value=p.month;
+    document.getElementById("dur").value=p.dur;
+    document.getElementById("editions").value=p.editions;
+    document.getElementById("budget").value=p.budget;
+    document.getElementById("prev").value=p.prev||"";
+    document.getElementById("operator").value=p.operator;
+    document.getElementById("capacity").value=p.capacity||"";
+    document.getElementById("rain").value=p.rain||"";
+    document.querySelectorAll("#flags1 .chip,#flags2 .chip,#flags3 .chip").forEach(function(c){
+      c.classList.toggle("on",!!p.flags[c.dataset.k]);
+    });
+    render();
+  }
+  document.querySelectorAll(".chip.preset").forEach(function(c){c.addEventListener("click",function(){applyPreset(c.dataset.p);});});
+  document.querySelectorAll("#flags1 .chip,#flags2 .chip,#flags3 .chip").forEach(function(c){c.addEventListener("click",function(){c.classList.toggle("on");render();});});
   document.getElementById("form").addEventListener("input",render);
   document.getElementById("form").addEventListener("change",render);
   render();
