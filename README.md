@@ -125,16 +125,21 @@ tourmachinelearning/
 │   ├─ 01_eda.ipynb
 │   ├─ 02_features.ipynb
 │   └─ 03_model.ipynb
+├─ data/seed/           ← 문체부 2026 전국축제 시드 (1,266건, 실측)
 ├─ src/                 ← 데이터 수집·전처리 + 핵심 엔진
 │   ├─ config.py        ← 설정·경로·API 키 로딩
 │   ├─ collect_tourapi.py    ← TourAPI 축제 정보 수집
 │   ├─ collect_weather.py    ← 기상청 날씨 수집
 │   ├─ collect_population.py ← 주변 지역 연령대별 인구 수집
+│   ├─ load_festivals.py     ← ⭐ 문체부 축제 엑셀 로더 (방문객·내외국인 실측)
+│   ├─ analyze_real.py       ← ⭐ 실데이터 분석 (외국인 실태·규모 상관)
+│   ├─ festival_to_plan.py   ← ⭐ 실측 축제 → 엔진 입력 매퍼 + 리포트
 │   ├─ preprocess.py    ← 정합·청소·파생변수
-│   └─ scoring.py       ← ⭐ 흥행도 점수 + 보완 피드백 + 마케팅 추천 엔진
+│   └─ scoring.py       ← ⭐ 흥행도 점수 + 확률예보 + 보완피드백 + 마케팅 엔진
 ├─ web/                 ← 웹/앱 프론트 + 배포
 └─ docs/                ← 기획서·기능설명서·발표자료
-    └─ architecture.md  ← 서비스 아키텍처 (대상 목표 확장판)
+    ├─ architecture.md  ← 서비스 아키텍처 (대상 목표 확장판)
+    └─ features.md      ← 피처 설계서 (누수 방지 체크리스트)
 ```
 
 ---
@@ -164,9 +169,11 @@ jupyter lab                      # 또는 jupyter notebook
 - [x] 과제 선정 (9번 · 축제 흥행 예보)
 - [x] 서비스 아키텍처 설계 (예측+진단+처방+마케팅 확장)
 - [x] 핵심 엔진 프로토타입 (`src/scoring.py` — 규칙 기반, 동작 확인 완료)
+- [x] **실데이터 확보** (문체부 2026 전국축제 1,266건 · 방문객·내외국인·예산 실측)
+- [x] **실데이터 검증** (예산↔방문 r=0.70, 외국인 실태 분석 / `analyze_real.py`)
+- [x] **엔진 실축제 적용** (재개최는 전년 실측 앵커링 → 머드축제 예측 179만 vs 실측 169만)
 - [ ] 서비스명 확정
-- [ ] 데이터 소스 확보 (TourAPI 키 발급 등)
-- [ ] EDA
-- [ ] 모델 (규칙 기반 → 실데이터 학습 교체)
+- [ ] TourAPI 키 발급 (실시간 연동)
+- [ ] 모델 (규칙 기반 → 실데이터 회귀 학습 교체)
 - [ ] 웹 구현
 - [ ] 제출

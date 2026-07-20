@@ -198,17 +198,25 @@ def estimate_visitors(plan: FestivalPlan, demo: RegionDemographics,
                       score: float, macro: MacroContext | None = None) -> int:
     """예상 방문자수 추정 (규칙 기반 근사).
 
-    주변 인구의 일정 비율이 흥행도에 비례해 방문한다고 가정.
-    축제 기간(일수)만큼 누적, 감염병 상황은 방문을 억제.
-    실데이터 확보 시 '증분 방문자' 회귀로 교체(docs/architecture.md §4).
+    두 경로로 추정한다:
+      · 재개최 축제(전년 실측 보유): 전년 방문객을 기준점으로 흥행 조건에 따라 ±조정.
+        (전년 방문객이 미래 방문의 가장 강한 예측변수)
+      · 신규 축제: 주변 인구 × 흥행도 비례 도달률로 추정.
+    감염병 상황은 두 경로 모두 방문을 억제.
+    실데이터 확보 시 회귀 모델로 교체(docs/architecture.md §4).
     """
     macro = macro or MacroContext()
-    reach_rate = 0.005 + 0.045 * (score / 100)
-    base = demo.total_population * reach_rate
-    if plan.is_weekend:
-        base *= 1.3
-    base *= (1 + 0.15 * min(plan.duration_days - 1, 3))   # 기간 누적(체감)
-    base *= (1 - 0.7 * _clip(macro.pandemic_index, 0, 1))  # 감염병 억제
+    if plan.prev_visitors and plan.prev_visitors > 0:
+        # 흥행도 50점=전년 유지(×1.0), 100점=×1.3, 0점=×0.7
+        adj = 0.7 + 0.6 * (score / 100)
+        base = plan.prev_visitors * adj
+    else:
+        reach_rate = 0.005 + 0.045 * (score / 100)
+        base = demo.total_population * reach_rate
+        if plan.is_weekend:
+            base *= 1.3
+        base *= (1 + 0.15 * min(plan.duration_days - 1, 3))   # 기간 누적(체감)
+    base *= (1 - 0.7 * _clip(macro.pandemic_index, 0, 1))     # 감염병 억제
     return int(base)
 
 

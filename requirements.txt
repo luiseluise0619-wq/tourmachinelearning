@@ -15,6 +15,9 @@ lightgbm>=4.0
 requests>=2.31
 python-dotenv>=1.0
 
+# --- 엑셀 (문체부 축제 시드) ---
+openpyxl>=3.1
+
 # --- 노트북 ---
 jupyterlab>=4.0
 ipykernel>=6.25
