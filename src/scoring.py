@@ -183,6 +183,71 @@ def estimate_visitor_split(plan: FestivalPlan, demo: RegionDemographics,
 
 
 # ────────────────────────────────────────────────────────────
+# ①-b 확률 예보 (몬테카를로) — 100명 단위 방문자 분포 + 쏠림 위험
+# ────────────────────────────────────────────────────────────
+def forecast_distribution(plan: FestivalPlan, demo: RegionDemographics,
+                          wx: WeatherOutlook, capacity: int | None = None,
+                          n_sims: int = 3000, bucket: int = 100,
+                          seed: int = 42) -> dict:
+    """방문자수를 점추정 대신 **확률분포**로 예보한다.
+
+    날씨는 평년값을 중심으로 불확실하므로, 날씨 시나리오를 수천 번 샘플링해
+    매번 방문자수를 계산하고 100명 단위 버킷으로 확률을 집계한다.
+    수용인원(capacity)을 주면 초과 확률(쏠림 위험)까지 산출 — 과제 9 정조준.
+
+    실데이터 확보 시 LightGBM 분위수 회귀(objective='quantile')로 교체 가능.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    # 날씨 불확실성: 기온은 평년 ±, 강수는 확률로 발생 여부 샘플
+    temps = rng.normal(wx.avg_temp_c, 3.0, n_sims)
+    rained = rng.random(n_sims) < wx.rain_prob
+    demand_noise = rng.lognormal(mean=0.0, sigma=0.15, size=n_sims)  # 일반 수요 변동
+
+    counts = np.empty(n_sims)
+    for i in range(n_sims):
+        sim_wx = WeatherOutlook(
+            avg_temp_c=float(temps[i]),
+            rain_prob=1.0 if rained[i] else 0.0,
+        )
+        s = appeal_score(plan, demo, sim_wx)["score"]
+        counts[i] = estimate_visitors(plan, demo, s) * demand_noise[i]
+
+    counts = np.clip(counts, 0, None)
+
+    # 100명 단위 버킷 확률
+    lo = int(counts.min() // bucket * bucket)
+    hi = int(counts.max() // bucket * bucket + bucket)
+    edges = np.arange(lo, hi + bucket, bucket)
+    hist, _ = np.histogram(counts, bins=edges)
+    probs = hist / n_sims
+    buckets = [
+        {"range": f"{int(edges[j]):,}~{int(edges[j+1]):,}명",
+         "prob_pct": round(float(probs[j]) * 100, 1)}
+        for j in range(len(hist)) if probs[j] * 100 >= 0.1   # 노이즈 꼬리 제거
+    ]
+
+    result = {
+        "expected": int(np.mean(counts)),
+        "p10": int(np.percentile(counts, 10)),
+        "p50": int(np.percentile(counts, 50)),
+        "p90": int(np.percentile(counts, 90)),
+        "interval_80": [int(np.percentile(counts, 10)),
+                        int(np.percentile(counts, 90))],
+        "buckets": buckets,
+    }
+    if capacity is not None:
+        over = float(np.mean(counts > capacity))
+        result["capacity"] = capacity
+        result["overcrowding_prob_pct"] = round(over * 100, 1)
+        result["overcrowding_risk"] = (
+            "높음" if over >= 0.3 else "주의" if over >= 0.1 else "낮음"
+        )
+    return result
+
+
+# ────────────────────────────────────────────────────────────
 # ② 보완 피드백 (what-if 처방)
 # ────────────────────────────────────────────────────────────
 def generate_feedback(plan: FestivalPlan, demo: RegionDemographics,
@@ -305,7 +370,7 @@ def recommend_marketing(demo: RegionDemographics) -> dict:
 # 종합 리포트
 # ────────────────────────────────────────────────────────────
 def build_report(plan: FestivalPlan, demo: RegionDemographics,
-                 wx: WeatherOutlook) -> dict:
+                 wx: WeatherOutlook, capacity: int | None = None) -> dict:
     """흥행 예보 리포트 전체를 조립한다."""
     appeal = appeal_score(plan, demo, wx)
     return {
@@ -315,6 +380,7 @@ def build_report(plan: FestivalPlan, demo: RegionDemographics,
         "grade": _grade(appeal["score"]),
         "factor_breakdown": appeal["factors"],
         "visitors": estimate_visitor_split(plan, demo, appeal["score"]),
+        "visitor_forecast": forecast_distribution(plan, demo, wx, capacity=capacity),
         "feedback": generate_feedback(plan, demo, wx),
         "marketing": recommend_marketing(demo),
     }
@@ -371,9 +437,20 @@ def _demo() -> None:
     )
     wx = WeatherOutlook(avg_temp_c=29.0, rain_prob=0.6)
 
-    report = build_report(plan, demo, wx)
+    report = build_report(plan, demo, wx, capacity=4000)
     print("=== 흥행 예보 리포트 ===")
     print(json.dumps(report, ensure_ascii=False, indent=2))
+
+    # 100명 단위 확률 예보 (몬테카를로) + 쏠림 위험
+    fc = report["visitor_forecast"]
+    print("\n=== 방문자 확률 예보 (100명 단위) ===")
+    print(f"기대값 {fc['expected']:,}명 · 80% 구간 "
+          f"{fc['interval_80'][0]:,}~{fc['interval_80'][1]:,}명")
+    for b in fc["buckets"]:
+        bar = "█" * int(b["prob_pct"] / 2)
+        print(f"  {b['range']:>16}  {b['prob_pct']:>5.1f}%  {bar}")
+    print(f"\n수용인원 {fc['capacity']:,}명 초과(쏠림) 확률: "
+          f"{fc['overcrowding_prob_pct']}%  → 위험도 {fc['overcrowding_risk']}")
 
     # K콘텐츠 연계 시 vs 미연계 시 외국인 방문 비교
     print("\n=== K콘텐츠 연계 효과 (외국인 방문) ===")
