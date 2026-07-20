@@ -1,14 +1,20 @@
-"""FestCast 핵심 엔진 — 흥행도 점수 · 보완 피드백 · 마케팅 추천.
+"""FestCast 핵심 엔진 — 흥행도 점수 · 확률 예보 · 보완 피드백 · 마케팅 추천.
 
-이 모듈이 FestCast의 '두뇌'다. 축제 기획안 + 주변 인구 + 날씨 전망을 받아
-    ① 흥행도 점수(0~100)와 예상 방문자수
-    ② 약점 진단 + "이렇게 바꾸면 +N%" 보완 피드백(what-if)
-    ③ 주변 인구 기반 타깃·홍보 채널·프로그램 추천
+이 모듈이 FestCast의 '두뇌'다. 축제 기획안 + 주변 인구 + 지역 여건 + 날씨 +
+거시환경을 받아
+    ① 흥행도 점수(0~100)와 예상 방문자수 (내국인/외국인 분리)
+    ② 100명 단위 확률 예보 + 쏠림(수용초과) 위험
+    ③ 약점 진단 + "이렇게 바꾸면 +N" 보완 피드백(what-if)
+    ④ 주변 인구 기반 타깃·홍보 채널·프로그램 추천
 을 하나의 리포트로 만든다.
 
-지금은 **규칙 기반 가중합**이다. 실데이터가 쌓이면 각 factor 의 가중치와
-방문자 추정식을 학습 모델(XGBoost/LightGBM)로 교체하는 구조로 설계했다.
-(docs/architecture.md 참고)
+흥행도는 5개 요인의 가중합이다:
+    weather(날씨) · demand(수요·접근성) · program(프로그램) ·
+    timing(시기) · reputation(평판·이력·홍보)
+
+지금은 **규칙 기반**이다. 실데이터가 쌓이면 각 factor 가중치와 방문자 추정식을
+학습 모델(XGBoost/LightGBM 회귀 + 분위수 회귀)로 교체하는 구조로 설계했다.
+(docs/architecture.md, docs/features.md 참고)
 
 바로 실행:
     python -m src.scoring        # 샘플 기획안으로 데모 리포트 출력
@@ -23,30 +29,64 @@ from dataclasses import dataclass, field
 # ────────────────────────────────────────────────────────────
 @dataclass
 class FestivalPlan:
-    """축제 기획안."""
+    """축제 기획안 (기획자가 정하거나 아는 값)."""
     name: str
     region: str                 # 개최 지역명
     month: int                  # 개최 월 (1~12)
     is_outdoor: bool            # 실외 여부 (날씨 민감도)
     is_weekend: bool            # 주말/공휴일 개최 여부
     num_programs: int           # 프로그램 개수(다양성)
+    # 프로그램 구성
     has_experience: bool = False   # 체험형 프로그램 포함
     has_food: bool = False         # 먹거리 존재
     has_performance: bool = False  # 공연/무대 존재
+    has_celebrity: bool = False    # 유명 아티스트/셀럽 출연
+    duration_days: int = 1         # 축제 기간(일수)
+    is_free: bool = True           # 입장 무료 여부
     budget_manwon: int = 0         # 예산(만원)
-    # 외국인 유치 관련 (한국관광공사 핵심 관심사)
-    has_kcontent: bool = False     # K콘텐츠 연계 여부(드라마 촬영지·K팝·한류스타 등)
+    # 외국인 유치 (한국관광공사 핵심 관심사)
+    has_kcontent: bool = False     # K콘텐츠 연계(드라마 촬영지·K팝·한류)
     kcontent_desc: str = ""        # 연계 콘텐츠 설명
-    near_intl_gateway: bool = False  # 공항·KTX 등 외국인 접근성 양호 지역
+    near_intl_gateway: bool = False  # 공항·KTX 등 외국인 접근성 양호
+    # 시기 심화
+    near_holiday: bool = False     # 연휴/황금연휴 인접
+    during_vacation: bool = False  # 방학 기간
+    nature_peak_match: float = 1.0  # 자연물(벚꽃·단풍) 절정 일치도 0~1 (비자연축제=1.0)
+    # 평판·이력 (시점정합: 직전 회차까지만)
+    festival_grade: str = "none"   # 지정등급 global/culture/expected/none
+    prev_visitors: int | None = None  # 직전 회차 방문자수
+    num_editions: int = 1          # 몇 회째 축제인가
+    # 홍보 투입
+    promo_budget_manwon: int = 0   # 홍보 예산(만원)
+    promo_channels: int = 0        # 홍보 채널 수
+    preorders: int = 0             # 사전 예매·예약 건수(선행지표)
+
+
+@dataclass
+class RegionContext:
+    """개최 지역 여건 (접근성·경쟁·관광 인프라)."""
+    distance_to_seoul_km: float = 100.0   # 수도권에서의 거리
+    distance_to_station_km: float = 10.0  # KTX역/터미널까지 거리
+    has_shuttle: bool = False             # 셔틀버스 운영
+    parking_capacity: int = 0             # 주차 규모(대)
+    nearby_festivals_same_week: int = 0   # 같은 주말 인근 축제 수(경쟁)
+    lodging_count: int = 0                # 인근 숙박 시설 수
+    restaurant_count: int = 0             # 인근 음식점 수
+
+
+@dataclass
+class MacroContext:
+    """거시·외부 환경 (시점정합: 그 시점까지 값만)."""
+    exchange_rate_krw_usd: float = 1300.0  # 원/달러 (원화 약세=외국인 유리)
+    pandemic_index: float = 0.0            # 0(정상)~1(심각): 방문 억제
 
 
 @dataclass
 class RegionDemographics:
     """주변 지역 인구 통계 (반경 내 합산). 연령대별 인구 수."""
     total_population: int
-    # 연령대 키: '10s','20s','30s','40s','50s','60s+'
-    age_counts: dict[str, int] = field(default_factory=dict)
-    female_ratio: float = 0.5   # 여성 비율(0~1)
+    age_counts: dict[str, int] = field(default_factory=dict)  # '10s'~'60s+'
+    female_ratio: float = 0.5
 
     def dominant_age(self) -> str:
         if not self.age_counts:
@@ -60,7 +100,7 @@ class RegionDemographics:
 
 @dataclass
 class WeatherOutlook:
-    """개최 시기 날씨 전망."""
+    """개최 시기 날씨 전망 (평년값 기반)."""
     avg_temp_c: float           # 평균 기온(℃)
     rain_prob: float            # 강수 확률(0~1)
 
@@ -70,70 +110,105 @@ class WeatherOutlook:
 # ────────────────────────────────────────────────────────────
 def weather_fit_score(plan: FestivalPlan, wx: WeatherOutlook) -> float:
     """날씨 적합도. 실외 축제일수록 강수/기온 페널티가 커진다."""
-    # 기온 쾌적도: 15~25℃ 를 최적으로, 멀어질수록 감점
     temp_penalty = min(abs(wx.avg_temp_c - 20) * 2.5, 60)
-    # 강수 페널티: 실외면 최대 -60, 실내면 완화
     rain_weight = 60 if plan.is_outdoor else 20
     rain_penalty = wx.rain_prob * rain_weight
     return _clip(100 - temp_penalty - rain_penalty)
 
 
-def demand_score(plan: FestivalPlan, demo: RegionDemographics) -> float:
-    """수요 기반. 주변 인구 규모가 클수록 잠재 방문자 풀이 크다."""
-    # 인구 규모를 로그 스케일로 0~100 매핑 (5만=낮음, 100만=높음)
+def demand_score(plan: FestivalPlan, demo: RegionDemographics,
+                 region: RegionContext) -> float:
+    """수요 기반. 주변 인구 + 접근성 + 관광 인프라 − 경쟁."""
     import math
     pop = max(demo.total_population, 1)
-    scaled = (math.log10(pop) - 4.0) / (6.0 - 4.0)   # 1만~100만 → 0~1
-    return _clip(scaled * 100)
+    pop_score = _clip((math.log10(pop) - 4.0) / 2.0 * 100) * 0.50   # 최대 50
+
+    access = (
+        _clip(12 * (1 - region.distance_to_seoul_km / 200), 0, 12)     # 수도권 근접
+        + _clip(8 * (1 - region.distance_to_station_km / 30), 0, 8)    # 역 근접
+        + (5 if region.has_shuttle else 0)                            # 셔틀
+        + min(region.parking_capacity / 500, 1) * 5                    # 주차
+    )                                                                 # 최대 30
+    infra = min(region.lodging_count / 100 + region.restaurant_count / 500,
+                1) * 20                                               # 최대 20
+    competition = min(region.nearby_festivals_same_week * 6, 25)       # 경쟁 감점
+    return _clip(pop_score + access + infra - competition)
 
 
 def program_score(plan: FestivalPlan) -> float:
-    """프로그램 매력도. 다양성 + 핵심 구성요소(체험·먹거리·공연)."""
-    diversity = min(plan.num_programs, 10) / 10 * 50   # 최대 50
-    richness = (
-        (15 if plan.has_experience else 0)
-        + (15 if plan.has_food else 0)
-        + (20 if plan.has_performance else 0)
-    )
-    return _clip(diversity + richness)
+    """프로그램 매력도. 다양성 + 구성 + 셀럽 + 무료 + 기간."""
+    diversity = min(plan.num_programs, 10) / 10 * 30
+    richness = ((10 if plan.has_experience else 0)
+                + (8 if plan.has_food else 0)
+                + (12 if plan.has_performance else 0))
+    celebrity = 15 if plan.has_celebrity else 0
+    free = 10 if plan.is_free else 0
+    duration = min(plan.duration_days, 4) / 4 * 15
+    return _clip(diversity + richness + celebrity + free + duration)
 
 
 def timing_score(plan: FestivalPlan) -> float:
-    """개최 시기. 주말/성수기(봄·가을) 가점."""
-    weekend = 40 if plan.is_weekend else 15
-    peak = 40 if plan.month in (4, 5, 9, 10) else (
-        20 if plan.month in (3, 6, 8, 11) else 10)   # 혹한·혹서·장마 감점
-    return _clip(weekend + peak + 20)
+    """개최 시기. 주말 + 성수기 + 연휴 + 방학 + 자연물 절정 일치."""
+    weekend = 25 if plan.is_weekend else 8
+    peak = 30 if plan.month in (4, 5, 9, 10) else (
+        18 if plan.month in (3, 6, 8, 11) else 8)
+    holiday = 15 if plan.near_holiday else 0
+    vacation = 10 if plan.during_vacation else 0
+    nature = _clip(plan.nature_peak_match, 0, 1) * 20
+    return _clip(weekend + peak + holiday + vacation + nature)
+
+
+def reputation_score(plan: FestivalPlan) -> float:
+    """평판·이력·홍보. 지정등급 + 개최 이력 + 과거 방문 추이 + 홍보 투입."""
+    import math
+    grade = {"global": 40, "culture": 30, "expected": 20}.get(plan.festival_grade, 8)
+    editions = min(plan.num_editions, 10) / 10 * 20
+    if plan.prev_visitors:
+        prev = _clip((math.log10(max(plan.prev_visitors, 1)) - 2.0) / 3.0 * 20, 0, 20)
+    else:
+        prev = 8   # 신규 축제 중립값
+    promo = (min(plan.promo_budget_manwon / 2000, 1) * 8
+             + min(plan.promo_channels / 5, 1) * 6
+             + min(plan.preorders / 1000, 1) * 6)                      # 최대 20
+    return _clip(grade + editions + prev + promo)
 
 
 # 흥행도 가중치 (실데이터 회귀로 학습 시 교체될 지점)
-WEIGHTS = {"weather": 0.30, "demand": 0.30, "program": 0.25, "timing": 0.15}
+WEIGHTS = {"weather": 0.20, "demand": 0.25, "program": 0.20,
+           "timing": 0.15, "reputation": 0.20}
 
 
 def appeal_score(plan: FestivalPlan, demo: RegionDemographics,
-                 wx: WeatherOutlook) -> dict:
+                 wx: WeatherOutlook, region: RegionContext | None = None) -> dict:
     """흥행도 종합 점수(0~100)와 요인별 분해."""
+    region = region or RegionContext()
     factors = {
         "weather": weather_fit_score(plan, wx),
-        "demand": demand_score(plan, demo),
+        "demand": demand_score(plan, demo, region),
         "program": program_score(plan),
         "timing": timing_score(plan),
+        "reputation": reputation_score(plan),
     }
     total = sum(factors[k] * WEIGHTS[k] for k in WEIGHTS)
-    return {"score": round(total, 1), "factors": {k: round(v, 1) for k, v in factors.items()}}
+    return {"score": round(total, 1),
+            "factors": {k: round(v, 1) for k, v in factors.items()}}
 
 
 def estimate_visitors(plan: FestivalPlan, demo: RegionDemographics,
-                      score: float) -> int:
+                      score: float, macro: MacroContext | None = None) -> int:
     """예상 방문자수 추정 (규칙 기반 근사).
 
     주변 인구의 일정 비율이 흥행도에 비례해 방문한다고 가정.
+    축제 기간(일수)만큼 누적, 감염병 상황은 방문을 억제.
     실데이터 확보 시 '증분 방문자' 회귀로 교체(docs/architecture.md §4).
     """
-    reach_rate = 0.005 + 0.045 * (score / 100)   # 흥행도 0→0.5%, 100→5%
+    macro = macro or MacroContext()
+    reach_rate = 0.005 + 0.045 * (score / 100)
     base = demo.total_population * reach_rate
     if plan.is_weekend:
         base *= 1.3
+    base *= (1 + 0.15 * min(plan.duration_days - 1, 3))   # 기간 누적(체감)
+    base *= (1 - 0.7 * _clip(macro.pandemic_index, 0, 1))  # 감염병 억제
     return int(base)
 
 
@@ -144,25 +219,22 @@ GATEWAY_MULTIPLIER = 1.5         # 공항·KTX 인접 등 접근성 보정
 
 
 def estimate_visitor_split(plan: FestivalPlan, demo: RegionDemographics,
-                           score: float) -> dict:
+                           score: float, macro: MacroContext | None = None) -> dict:
     """총 방문자를 내국인/외국인으로 분리하고 K콘텐츠 효과를 정량화한다.
 
-    핵심: 같은 축제라도 K콘텐츠(드라마 촬영지·K팝·한류) 연계 시
-    외국인 방문이 크게 늘어난다는 걸 "연계 시 vs 미연계 시"로 비교해 보여준다.
+    외국인은 K콘텐츠 연계·국제 접근성·환율(원화 약세)에 크게 좌우된다.
     한국관광공사(주최)의 최대 관심사인 방한 외국인 유치를 정조준한 지표.
     """
-    total = estimate_visitors(plan, demo, score)
+    macro = macro or MacroContext()
+    total = estimate_visitors(plan, demo, score, macro)
 
-    # 접근성에 따른 외국인 기본 유입
     gateway = GATEWAY_MULTIPLIER if plan.near_intl_gateway else 1.0
+    exch = _clip(macro.exchange_rate_krw_usd / 1300, 0.8, 1.4)   # 원화 약세=외국인↑
 
-    # 미연계(baseline) 외국인
-    foreign_wo = total * FOREIGN_BASE_RATIO * gateway
-    # 연계 시 외국인 (K콘텐츠는 흥행 점수가 높을수록 파급도 커짐)
+    foreign_wo = total * FOREIGN_BASE_RATIO * gateway * exch
     kcontent_boost = KCONTENT_MULTIPLIER * (0.6 + 0.4 * score / 100)
     foreign_with = foreign_wo * kcontent_boost
 
-    # 실제 채택되는 외국인 추정치는 기획안의 K콘텐츠 연계 여부에 따름
     foreign = foreign_with if plan.has_kcontent else foreign_wo
     domestic = max(total - foreign, 0)
 
@@ -171,7 +243,6 @@ def estimate_visitor_split(plan: FestivalPlan, demo: RegionDemographics,
         "domestic": int(domestic),
         "foreign": int(foreign),
         "foreign_ratio": round(foreign / total * 100, 1) if total else 0.0,
-        # K콘텐츠 연계 효과 (핵심 인사이트)
         "kcontent_effect": {
             "foreign_without_kcontent": int(foreign_wo),
             "foreign_with_kcontent": int(foreign_with),
@@ -186,12 +257,14 @@ def estimate_visitor_split(plan: FestivalPlan, demo: RegionDemographics,
 # ①-b 확률 예보 (몬테카를로) — 100명 단위 방문자 분포 + 쏠림 위험
 # ────────────────────────────────────────────────────────────
 def forecast_distribution(plan: FestivalPlan, demo: RegionDemographics,
-                          wx: WeatherOutlook, capacity: int | None = None,
+                          wx: WeatherOutlook, region: RegionContext | None = None,
+                          macro: MacroContext | None = None,
+                          capacity: int | None = None,
                           n_sims: int = 3000, bucket: int = 100,
                           seed: int = 42) -> dict:
     """방문자수를 점추정 대신 **확률분포**로 예보한다.
 
-    날씨는 평년값을 중심으로 불확실하므로, 날씨 시나리오를 수천 번 샘플링해
+    날씨는 평년값을 중심으로 불확실하므로 날씨 시나리오를 수천 번 샘플링해
     매번 방문자수를 계산하고 100명 단위 버킷으로 확률을 집계한다.
     수용인원(capacity)을 주면 초과 확률(쏠림 위험)까지 산출 — 과제 9 정조준.
 
@@ -200,23 +273,19 @@ def forecast_distribution(plan: FestivalPlan, demo: RegionDemographics,
     import numpy as np
 
     rng = np.random.default_rng(seed)
-    # 날씨 불확실성: 기온은 평년 ±, 강수는 확률로 발생 여부 샘플
     temps = rng.normal(wx.avg_temp_c, 3.0, n_sims)
     rained = rng.random(n_sims) < wx.rain_prob
-    demand_noise = rng.lognormal(mean=0.0, sigma=0.15, size=n_sims)  # 일반 수요 변동
+    demand_noise = rng.lognormal(mean=0.0, sigma=0.15, size=n_sims)
 
     counts = np.empty(n_sims)
     for i in range(n_sims):
-        sim_wx = WeatherOutlook(
-            avg_temp_c=float(temps[i]),
-            rain_prob=1.0 if rained[i] else 0.0,
-        )
-        s = appeal_score(plan, demo, sim_wx)["score"]
-        counts[i] = estimate_visitors(plan, demo, s) * demand_noise[i]
+        sim_wx = WeatherOutlook(avg_temp_c=float(temps[i]),
+                                rain_prob=1.0 if rained[i] else 0.0)
+        s = appeal_score(plan, demo, sim_wx, region)["score"]
+        counts[i] = estimate_visitors(plan, demo, s, macro) * demand_noise[i]
 
     counts = np.clip(counts, 0, None)
 
-    # 100명 단위 버킷 확률
     lo = int(counts.min() // bucket * bucket)
     hi = int(counts.max() // bucket * bucket + bucket)
     edges = np.arange(lo, hi + bucket, bucket)
@@ -225,7 +294,7 @@ def forecast_distribution(plan: FestivalPlan, demo: RegionDemographics,
     buckets = [
         {"range": f"{int(edges[j]):,}~{int(edges[j+1]):,}명",
          "prob_pct": round(float(probs[j]) * 100, 1)}
-        for j in range(len(hist)) if probs[j] * 100 >= 0.1   # 노이즈 꼬리 제거
+        for j in range(len(hist)) if probs[j] * 100 >= 0.1
     ]
 
     result = {
@@ -251,10 +320,13 @@ def forecast_distribution(plan: FestivalPlan, demo: RegionDemographics,
 # ② 보완 피드백 (what-if 처방)
 # ────────────────────────────────────────────────────────────
 def generate_feedback(plan: FestivalPlan, demo: RegionDemographics,
-                      wx: WeatherOutlook) -> list[dict]:
+                      wx: WeatherOutlook, region: RegionContext | None = None,
+                      macro: MacroContext | None = None) -> list[dict]:
     """약한 요인마다 구체적 처방과 예상 효과를 생성한다."""
+    region = region or RegionContext()
+    macro = macro or MacroContext()
     fb: list[dict] = []
-    result = appeal_score(plan, demo, wx)
+    result = appeal_score(plan, demo, wx, region)
     f = result["factors"]
 
     # 날씨 약점
@@ -276,15 +348,20 @@ def generate_feedback(plan: FestivalPlan, demo: RegionDemographics,
     if not plan.is_weekend:
         gain = round((timing_score(_replace(plan, is_weekend=True))
                       - f["timing"]) * WEIGHTS["timing"], 1)
-        fb.append(_fb("평일 개최",
-                      "평일 개최는 방문 접근성이 낮음",
-                      "주말·공휴일 포함 일정으로 조정",
-                      gain))
+        fb.append(_fb("평일 개최", "평일 개최는 방문 접근성이 낮음",
+                      "주말·공휴일 포함 일정으로 조정", gain))
     if plan.month in (1, 2, 7, 12):
         fb.append(_fb("비수기/기상 리스크 시기",
                       "혹한·혹서·장마 시기 개최는 방문 저하 위험",
-                      "봄(4~5월)·가을(9~10월) 성수기로 일정 이동 검토",
-                      None))
+                      "봄(4~5월)·가을(9~10월) 성수기로 일정 이동 검토", None))
+    if not plan.near_holiday:
+        fb.append(_fb("연휴 미활용",
+                      "연휴·황금연휴와 연계되지 않아 방문 유인이 약함",
+                      "인접 공휴일·징검다리 연휴에 맞춰 일정 배치", None))
+    if plan.nature_peak_match < 0.7:
+        fb.append(_fb("자연물 절정 시기 불일치",
+                      f"개화/단풍 등 절정 일치도 {plan.nature_peak_match:.0%} — 시기 어긋남",
+                      "그 해 개화/단풍 예보에 맞춰 개최일 미세 조정", None))
 
     # 프로그램 약점
     if f["program"] < 60:
@@ -292,30 +369,51 @@ def generate_feedback(plan: FestivalPlan, demo: RegionDemographics,
         if not plan.has_experience:
             missing.append("체험형 프로그램")
         if not plan.has_food:
-            missing.append("먹거리 존재")
+            missing.append("먹거리")
         if not plan.has_performance:
             missing.append("공연/무대")
+        if not plan.has_celebrity:
+            missing.append("유명 아티스트 라인업")
         if missing:
-            fb.append(_fb("프로그램 빈약",
-                          f"부족 요소: {', '.join(missing)}",
-                          f"{missing[0]} 우선 보강 — 체류시간·재방문 유도",
-                          None))
+            fb.append(_fb("프로그램 빈약", f"부족 요소: {', '.join(missing)}",
+                          f"{missing[0]} 우선 보강 — 체류시간·재방문 유도", None))
+    if not plan.is_free:
+        fb.append(_fb("입장료 진입장벽",
+                      "유료 입장은 초기 방문 유인을 낮춤",
+                      "무료화 또는 사전예매 할인·패키지로 진입장벽 완화", None))
 
-    # 수요 약점
+    # 수요·접근성 약점
     if f["demand"] < 50:
         fb.append(_fb("주변 수요 부족",
-                      f"주변 인구 {demo.total_population:,}명으로 잠재 방문 풀이 작음",
-                      "인근 도시 대상 광역 홍보 + 관광버스/셔틀 연계로 도달 범위 확대",
-                      None))
+                      f"주변 인구 {demo.total_population:,}명·접근성 낮음",
+                      "인근 도시 광역 홍보 + 관광버스/셔틀 연계로 도달 범위 확대", None))
+    if region.nearby_festivals_same_week >= 2:
+        fb.append(_fb("경쟁 축제 밀집",
+                      f"같은 주말 인근 축제 {region.nearby_festivals_same_week}건 — 관객 분산",
+                      "개최 주말을 1~2주 분산하거나 차별화 콘텐츠로 포지셔닝", None))
+    if not region.has_shuttle and region.distance_to_station_km > 5:
+        fb.append(_fb("대중교통 접근성",
+                      f"역/터미널까지 {region.distance_to_station_km}km, 셔틀 없음",
+                      "역-행사장 셔틀버스 운영으로 무자차 방문객 확보", None))
+
+    # 평판·홍보 약점
+    if plan.festival_grade == "none":
+        fb.append(_fb("지정축제 미선정",
+                      "문체부 문화관광축제 지정 이력 없음 — 공신력·홍보력 약함",
+                      "문화관광축제 지정 신청 요건 정비(콘텐츠·안전·데이터 관리)", None))
+    if plan.preorders == 0 or plan.promo_channels < 2:
+        fb.append(_fb("홍보 투입 부족",
+                      "사전예매/홍보 채널이 적어 초기 확산이 어려움",
+                      "사전예매 오픈 + SNS·지역채널 등 홍보 채널 다변화", None))
 
     # 외국인 유치 기회 (K콘텐츠 미연계 시)
     if not plan.has_kcontent:
-        split = estimate_visitor_split(plan, demo, result["score"])
+        split = estimate_visitor_split(plan, demo, result["score"], macro)
         eff = split["kcontent_effect"]
         fb.append(_fb("외국인 유치 기회 미활용",
                       f"현재 예상 외국인 {split['foreign']:,}명 — K콘텐츠 미연계",
-                      "인근 드라마 촬영지·K팝/한류 콘텐츠와 연계 프로그램 구성 "
-                      "(포토존·투어·굿즈) + 외국어 안내·다국어 SNS 홍보",
+                      "인근 드라마 촬영지·K팝/한류 콘텐츠 연계(포토존·투어·굿즈) "
+                      "+ 외국어 안내·다국어 SNS 홍보",
                       None,
                       extra={"expected_foreign_uplift":
                              f"외국인 약 {eff['delta']:,}명 추가 (+{eff['uplift_pct']:.0f}%) 기대"}))
@@ -326,7 +424,6 @@ def generate_feedback(plan: FestivalPlan, demo: RegionDemographics,
 # ────────────────────────────────────────────────────────────
 # ③ 마케팅 / 타깃 추천 (주변 인구 기반)
 # ────────────────────────────────────────────────────────────
-# 연령대 → 채널·메시지·프로그램 매핑
 _SEGMENT_PLAYBOOK = {
     "10s": {"channels": ["인스타그램/틱톡 릴스", "학교 연계 홍보"],
             "tone": "트렌디·포토스팟 강조", "program": "포토존·SNS 이벤트·버스킹"},
@@ -354,7 +451,6 @@ def recommend_marketing(demo: RegionDemographics) -> dict:
         if demo.female_ratio <= 0.47 else
         "성비 균형 — 폭넓은 프로그램 구성"
     )
-    # 상위 2개 세그먼트
     top2 = sorted(demo.age_counts.items(), key=lambda kv: kv[1], reverse=True)[:2]
     return {
         "primary_segment": dom,
@@ -370,18 +466,23 @@ def recommend_marketing(demo: RegionDemographics) -> dict:
 # 종합 리포트
 # ────────────────────────────────────────────────────────────
 def build_report(plan: FestivalPlan, demo: RegionDemographics,
-                 wx: WeatherOutlook, capacity: int | None = None) -> dict:
+                 wx: WeatherOutlook, region: RegionContext | None = None,
+                 macro: MacroContext | None = None,
+                 capacity: int | None = None) -> dict:
     """흥행 예보 리포트 전체를 조립한다."""
-    appeal = appeal_score(plan, demo, wx)
+    region = region or RegionContext()
+    macro = macro or MacroContext()
+    appeal = appeal_score(plan, demo, wx, region)
     return {
         "festival": plan.name,
         "region": plan.region,
         "appeal_score": appeal["score"],
         "grade": _grade(appeal["score"]),
         "factor_breakdown": appeal["factors"],
-        "visitors": estimate_visitor_split(plan, demo, appeal["score"]),
-        "visitor_forecast": forecast_distribution(plan, demo, wx, capacity=capacity),
-        "feedback": generate_feedback(plan, demo, wx),
+        "visitors": estimate_visitor_split(plan, demo, appeal["score"], macro),
+        "visitor_forecast": forecast_distribution(plan, demo, wx, region, macro,
+                                                  capacity=capacity),
+        "feedback": generate_feedback(plan, demo, wx, region, macro),
         "marketing": recommend_marketing(demo),
     }
 
@@ -427,7 +528,12 @@ def _demo() -> None:
         name="○○ 벚꽃 야행 축제", region="경기 ○○시",
         month=7, is_outdoor=True, is_weekend=False,
         num_programs=4, has_experience=False, has_food=True,
-        has_performance=True, budget_manwon=30000,
+        has_performance=True, has_celebrity=False, duration_days=2,
+        is_free=True, budget_manwon=30000,
+        has_kcontent=False, near_intl_gateway=False,
+        near_holiday=False, during_vacation=True, nature_peak_match=0.5,
+        festival_grade="none", prev_visitors=2800, num_editions=3,
+        promo_budget_manwon=1500, promo_channels=1, preorders=0,
     )
     demo = RegionDemographics(
         total_population=120_000,
@@ -435,13 +541,18 @@ def _demo() -> None:
                     "40s": 26000, "50s": 21000, "60s+": 28000},
         female_ratio=0.54,
     )
+    region = RegionContext(
+        distance_to_seoul_km=70, distance_to_station_km=8,
+        has_shuttle=False, parking_capacity=300,
+        nearby_festivals_same_week=2, lodging_count=40, restaurant_count=200,
+    )
+    macro = MacroContext(exchange_rate_krw_usd=1380, pandemic_index=0.0)
     wx = WeatherOutlook(avg_temp_c=29.0, rain_prob=0.6)
 
-    report = build_report(plan, demo, wx, capacity=4000)
+    report = build_report(plan, demo, wx, region, macro, capacity=4000)
     print("=== 흥행 예보 리포트 ===")
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
-    # 100명 단위 확률 예보 (몬테카를로) + 쏠림 위험
     fc = report["visitor_forecast"]
     print("\n=== 방문자 확률 예보 (100명 단위) ===")
     print(f"기대값 {fc['expected']:,}명 · 80% 구간 "
@@ -451,16 +562,6 @@ def _demo() -> None:
         print(f"  {b['range']:>16}  {b['prob_pct']:>5.1f}%  {bar}")
     print(f"\n수용인원 {fc['capacity']:,}명 초과(쏠림) 확률: "
           f"{fc['overcrowding_prob_pct']}%  → 위험도 {fc['overcrowding_risk']}")
-
-    # K콘텐츠 연계 시 vs 미연계 시 외국인 방문 비교
-    print("\n=== K콘텐츠 연계 효과 (외국인 방문) ===")
-    score = report["appeal_score"]
-    without = estimate_visitor_split(_replace(plan, has_kcontent=False), demo, score)
-    withk = estimate_visitor_split(_replace(plan, has_kcontent=True), demo, score)
-    print(f"미연계 외국인: {without['foreign']:,}명")
-    print(f"K콘텐츠 연계 외국인: {withk['foreign']:,}명 "
-          f"(+{withk['foreign'] - without['foreign']:,}명, "
-          f"+{withk['kcontent_effect']['uplift_pct']:.0f}%)")
 
 
 if __name__ == "__main__":
