@@ -1,0 +1,341 @@
+<style>
+  :root {
+    --bg: #fbfaf8; --surface: #ffffff; --surface-2: #f4f2ec;
+    --ink: #16201f; --muted: #55635f; --faint: #8b978f; --line: #e6e2da;
+    --teal: #0f6e78; --teal-ink: #0b545c; --teal-soft: #dceded;
+    --amber: #c9772a; --red: #b64f3d; --good: #2f8f6b;
+    --shadow: 0 1px 2px rgba(20,30,28,.04), 0 6px 22px rgba(20,30,28,.06);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1315; --surface: #141d1f; --surface-2: #182224;
+      --ink: #e9efec; --muted: #9fafab; --faint: #6a7c78; --line: #26302f;
+      --teal: #56c6d1; --teal-ink: #8fe0e7; --teal-soft: #123236;
+      --amber: #e3a15c; --red: #e08066; --good: #57bd93;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #fbfaf8; --surface: #ffffff; --surface-2: #f4f2ec;
+    --ink: #16201f; --muted: #55635f; --faint: #8b978f; --line: #e6e2da;
+    --teal: #0f6e78; --teal-ink: #0b545c; --teal-soft: #dceded;
+    --amber: #c9772a; --red: #b64f3d; --good: #2f8f6b;
+    --shadow: 0 1px 2px rgba(20,30,28,.04), 0 6px 22px rgba(20,30,28,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1315; --surface: #141d1f; --surface-2: #182224;
+    --ink: #e9efec; --muted: #9fafab; --faint: #6a7c78; --line: #26302f;
+    --teal: #56c6d1; --teal-ink: #8fe0e7; --teal-soft: #123236;
+    --amber: #e3a15c; --red: #e08066; --good: #57bd93;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo",
+      "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.7; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "tnum";
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 22px 100px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Hero */
+  .hero { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--teal-ink);
+    background: var(--teal-soft); padding: 6px 12px; border-radius: 999px;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 46px); line-height: 1.15; font-weight: 800;
+    letter-spacing: -.02em; margin: 22px 0 14px; text-wrap: balance;
+  }
+  h1 .accent { color: var(--teal); }
+  .lede { font-size: clamp(16px, 2.3vw, 19px); color: var(--muted); max-width: 62ch; }
+  .metabar {
+    display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 28px;
+    font-size: 13.5px; color: var(--faint);
+  }
+  .metabar b { color: var(--ink); font-weight: 600; }
+
+  /* Sections */
+  section { padding: 48px 0; border-bottom: 1px solid var(--line); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-no {
+    font-size: 13px; font-weight: 700; color: var(--teal);
+    font-variant-numeric: tabular-nums; letter-spacing: .05em;
+  }
+  h2 { font-size: clamp(22px, 3.2vw, 28px); font-weight: 750; letter-spacing: -.015em; margin: 0; }
+  .sec-sub { color: var(--muted); margin: 6px 0 26px; max-width: 64ch; }
+  p { max-width: 68ch; }
+
+  /* Stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+  }
+  .tile .v { font-size: 30px; font-weight: 800; letter-spacing: -.02em; color: var(--teal); }
+  .tile .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+  }
+  .card .tag {
+    font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--teal-ink);
+    background: var(--teal-soft); padding: 3px 9px; border-radius: 6px; display: inline-block;
+  }
+  .card h3 { margin: 12px 0 6px; font-size: 17px; }
+  .card p { font-size: 14px; color: var(--muted); margin: 0; }
+
+  /* Category chips */
+  .catgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .catrow {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .catrow .h { font-weight: 700; font-size: 14.5px; margin-bottom: 6px; }
+  .catrow .items { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .star { color: var(--amber); font-weight: 700; }
+
+  /* Evidence table (effects) */
+  .etable { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+  .erow {
+    display: grid; grid-template-columns: 168px 1fr 92px 34px; align-items: center;
+    gap: 12px; padding: 9px 12px; border-radius: 9px;
+  }
+  .erow:nth-child(odd) { background: var(--surface-2); }
+  .erow .name { font-size: 14px; font-weight: 600; }
+  .erow .barwrap { position: relative; height: 20px; display: flex; align-items: center; }
+  .erow .bar { height: 11px; border-radius: 3px 5px 5px 3px; }
+  .bar.pos { background: var(--teal); }
+  .bar.neg { background: var(--red); }
+  .erow .eff { text-align: right; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .eff.pos { color: var(--teal); } .eff.neg { color: var(--red); }
+  .erow .sig { text-align: center; color: var(--amber); font-weight: 700; font-size: 13px; }
+  .thead {
+    display: grid; grid-template-columns: 168px 1fr 92px 34px; gap: 12px;
+    padding: 0 12px 8px; font-size: 12px; color: var(--faint);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  .legend { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+
+  /* Importance bars */
+  .imp { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+  .improw { display: grid; grid-template-columns: 130px 1fr 46px; align-items: center; gap: 12px; }
+  .improw .n { font-size: 13.5px; color: var(--ink); }
+  .improw .track { height: 12px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+  .improw .fill { height: 100%; background: linear-gradient(90deg, var(--teal-ink), var(--teal)); border-radius: 6px; }
+  .improw .val { text-align: right; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Validation callout */
+  .valid {
+    background: linear-gradient(135deg, var(--teal-soft), var(--surface));
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 28px;
+    box-shadow: var(--shadow);
+  }
+  .compare { display: flex; flex-wrap: wrap; gap: 30px; align-items: flex-end; margin-top: 8px; }
+  .compare .b { }
+  .compare .b .v { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+  .compare .b .v.pred { color: var(--teal); }
+  .compare .b .l { font-size: 13px; color: var(--muted); }
+  .compare .err { font-size: 14px; color: var(--good); font-weight: 700; align-self: center; }
+
+  .callout {
+    border-left: 3px solid var(--amber); background: var(--surface-2);
+    padding: 14px 18px; border-radius: 0 10px 10px 0; font-size: 14px; color: var(--muted);
+    margin-top: 20px;
+  }
+  ul.clean { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ul.clean li { padding-left: 26px; position: relative; font-size: 14.5px; color: var(--muted); max-width: 66ch; }
+  ul.clean li::before { content: "→"; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
+  ul.clean li b { color: var(--ink); font-weight: 650; }
+  .foot { padding: 34px 0 0; color: var(--faint); font-size: 13px; }
+  @media (max-width: 560px) {
+    .erow, .thead { grid-template-columns: 116px 1fr 68px 26px; gap: 8px; }
+    .erow .name { font-size: 12.5px; }
+    .improw { grid-template-columns: 96px 1fr 42px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">🎪 FestCast · 방법론 리포트</span>
+    <h1>축제 흥행을 <span class="accent">감이 아니라 근거로</span> 예보하기까지</h1>
+    <p class="lede">전국 1,266개 축제 실측 데이터로, 어떤 변수가 방문객을 움직이는지
+      통계적 근거(계수·p값)와 함께 확정한 과정. 예측·진단·처방을 데이터로 뒷받침한다.</p>
+    <div class="metabar">
+      <span>데이터 <b>문화체육관광부 2026 전국지역축제</b></span>
+      <span>표본 <b class="num">1,266건</b></span>
+      <span>과제 <b>9번 · 축제 흥행 예보</b></span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">01</span><h2>접근 — 무엇을, 왜</h2></div>
+    <p class="sec-sub">대부분의 축제 기획은 "감(感)"에 의존한다. 우리는 예산 집행 전에
+      기획안을 <b>객관적으로 검증</b>하는 것을 목표로 삼았다.</p>
+    <p>핵심 질문은 하나다 — <b>"무엇이 축제 방문객을 좌우하는가?"</b>
+      이 질문에 답하려면 (1) 실제 방문객 데이터, (2) 그에 영향을 주는 변수,
+      (3) 각 변수의 영향을 <b>근거로 증명</b>하는 방법이 필요하다. 아래는 그 세 가지를
+      순서대로 쌓아온 기록이다.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">02</span><h2>데이터 확보</h2></div>
+    <p class="sec-sub">가장 오래 걸리는 단계. 문체부 2026 전국지역축제 자료에서
+      방문객·예산·회차 실측을 확보하고 29개 변수로 정합했다.</p>
+    <div class="tiles">
+      <div class="tile"><div class="v num">1,266</div><div class="l">전국 축제 (건)</div></div>
+      <div class="tile"><div class="v num">1,183</div><div class="l">방문객 실측 확보</div></div>
+      <div class="tile"><div class="v num">357</div><div class="l">외국인 방문 실측</div></div>
+      <div class="tile"><div class="v num">29</div><div class="l">정합 변수 (컬럼)</div></div>
+    </div>
+    <div class="callout">방문객 중앙값 <b class="num">33,500명</b> · 예산 중앙값
+      <b class="num">204백만원</b> · 편차가 극심(로그정규)해 이후 분석은 log 스케일 사용.
+      특히 <b>내국인/외국인 분리 실측</b>이 있어 방한 외국인 유치(관광공사 핵심 미션)를
+      데이터로 다룰 수 있다.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">03</span><h2>변수 발굴 — 싹 다</h2></div>
+    <p class="sec-sub">방문객에 영향을 줄 수 있는 모든 후보를 10개 카테고리, 60여 변수로 정리.
+      <span class="star">★</span> = 영향 큰 우선 변수.</p>
+    <div class="catgrid">
+      <div class="catrow"><div class="h">A. 축제 자체</div><div class="items">
+        예산<span class="star">★</span> · 기간<span class="star">★</span> · 회차<span class="star">★</span> · 주기<span class="star">★</span> · 운영주체<span class="star">★</span> · 유형 · 실내외 · 프로그램 구성 · 셀럽 · 입장료 · 지정등급<span class="star">★</span></div></div>
+      <div class="catrow"><div class="h">B. 시간 / 캘린더</div><div class="items">
+        개최월<span class="star">★</span> · 요일<span class="star">★</span> · 연휴 인접 · 방학 · 자연물 절정 일치<span class="star">★</span></div></div>
+      <div class="catrow"><div class="h">C. 날씨</div><div class="items">
+        평년 기온·강수<span class="star">★</span> · 근접예보 · 폭염/한파/미세먼지 · 일몰시간</div></div>
+      <div class="catrow"><div class="h">D. 지역 / 입지</div><div class="items">
+        지역<span class="star">★</span> · 주변인구<span class="star">★</span> · 연령·성별<span class="star">★</span> · 수도권거리 · 교통 · 숙박·음식점</div></div>
+      <div class="catrow"><div class="h">E. 경쟁</div><div class="items">
+        같은 주말 인근축제 수<span class="star">★</span> · 초대형 이벤트 · 유사테마 경쟁</div></div>
+      <div class="catrow"><div class="h">F. 외국인 / 글로벌</div><div class="items">
+        K콘텐츠 연계<span class="star">★</span> · 그 시점 인기도<span class="star">★</span> · 외국어 홍보 · 공항 접근성 · 환율<span class="star">★</span></div></div>
+      <div class="catrow"><div class="h">G. 거시환경</div><div class="items">
+        감염병 · 소비심리 · 유가/물가 · 사회이슈</div></div>
+      <div class="catrow"><div class="h">H. 홍보 / 디지털</div><div class="items">
+        홍보예산·채널<span class="star">★</span> · 사전예매<span class="star">★</span> · 검색량 · SNS언급 · 언론보도</div></div>
+      <div class="catrow"><div class="h">I. 과거 성과</div><div class="items">
+        직전 방문객<span class="star">★</span> · 방문 추세 · 만족도 · 계측방법(신뢰도)</div></div>
+      <div class="catrow"><div class="h">J. 상권 / 지역경제</div><div class="items">
+        전통시장·점포수 · 특산물 연계 · 야시장 규모</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">04</span><h2>근거 체계 — 감(感) 금지</h2></div>
+    <p class="sec-sub">모든 변수의 영향에는 출처가 있어야 한다. 근거의 종류에 따라 3단계로 나눴다.</p>
+    <div class="cards">
+      <div class="card"><span class="tag">T1 · 데이터</span>
+        <h3>데이터로 학습</h3>
+        <p>우리 실측 1,266건으로 회귀계수·95% CI·p값·SHAP를 산출. 가장 강한 근거.</p></div>
+      <div class="card"><span class="tag">T2 · 문헌</span>
+        <h3>문헌·공식통계</h3>
+        <p>날씨·K콘텐츠·환율 등은 선행연구·관광공사 통계의 효과크기를 출처와 함께 인용.</p></div>
+      <div class="card"><span class="tag">T3 · 규칙</span>
+        <h3>규칙 + 민감도</h3>
+        <p>데이터·문헌이 없는 변수는 가정을 <b>드러내고</b> 값을 흔들어(민감도) 검증.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">05</span><h2>변수 근거 (T1 결과)</h2></div>
+    <p class="sec-sub">OLS 회귀로 각 변수의 방문객 효과와 유의성(p값)을 산출.
+      다른 변수를 통제한 <b>순효과</b>다. (표본 1,183건 · 조정 R² 0.42)</p>
+    <div class="thead"><span>변수</span><span>방문객 효과</span><span style="text-align:right">효과</span><span style="text-align:center">유의</span></div>
+    <div class="etable">
+      <div class="erow"><span class="name">예산 (10배당)</span>
+        <span class="barwrap"><span class="bar pos" style="width:100%"></span></span>
+        <span class="eff pos">+327%</span><span class="sig">***</span></div>
+      <div class="erow"><span class="name">지역 · 서울</span>
+        <span class="barwrap"><span class="bar pos" style="width:67%"></span></span>
+        <span class="eff pos">+218%</span><span class="sig">***</span></div>
+      <div class="erow"><span class="name">지역 · 울산</span>
+        <span class="barwrap"><span class="bar pos" style="width:36%"></span></span>
+        <span class="eff pos">+118%</span><span class="sig">**</span></div>
+      <div class="erow"><span class="name">개최주기 · 매년</span>
+        <span class="barwrap"><span class="bar pos" style="width:25%"></span></span>
+        <span class="eff pos">+83%</span><span class="sig">*</span></div>
+      <div class="erow"><span class="name">지역 · 부산</span>
+        <span class="barwrap"><span class="bar pos" style="width:25%"></span></span>
+        <span class="eff pos">+82%</span><span class="sig">**</span></div>
+      <div class="erow"><span class="name">운영주체 · 민간 사업체</span>
+        <span class="barwrap"><span class="bar neg" style="width:23%"></span></span>
+        <span class="eff neg">−74%</span><span class="sig">**</span></div>
+      <div class="erow"><span class="name">유형 · 자연생태</span>
+        <span class="barwrap"><span class="bar pos" style="width:16%"></span></span>
+        <span class="eff pos">+51%</span><span class="sig">**</span></div>
+      <div class="erow"><span class="name">유형 · 지역특산물</span>
+        <span class="barwrap"><span class="bar pos" style="width:12%"></span></span>
+        <span class="eff pos">+39%</span><span class="sig">**</span></div>
+      <div class="erow"><span class="name">기간 (+1일당)</span>
+        <span class="barwrap"><span class="bar pos" style="width:6%"></span></span>
+        <span class="eff pos">+1.9%</span><span class="sig">***</span></div>
+      <div class="erow"><span class="name">회차 (+1회당)</span>
+        <span class="barwrap"><span class="bar pos" style="width:4%"></span></span>
+        <span class="eff pos">+0.7%</span><span class="sig">***</span></div>
+    </div>
+    <p class="legend">*** p&lt;0.001 · ** p&lt;0.01 · * p&lt;0.05 — 별표가 있을수록 우연이 아닐 확률이 높다(근거 강함).
+      막대 길이 = 효과 크기(예산=100% 기준).</p>
+    <div class="callout"><b>정직한 한계:</b> 예산↔방문객은 양방향(큰 축제라 예산이 크고,
+      예산이 커서 방문이 큼)이라 인과로 단정하지 않고 <b>규모의 대리지표</b>로 사용한다.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">06</span><h2>예측력 &amp; 기여도</h2></div>
+    <p class="sec-sub">비선형·상호작용을 잡는 GBM으로 5-fold 교차검증. 예측 기여도 상위 변수.</p>
+    <div class="tiles" style="margin-bottom:24px">
+      <div class="tile"><div class="v num">0.55</div><div class="l">GBM 교차검증 R²</div></div>
+      <div class="tile"><div class="v num">0.71</div><div class="l">예산↔방문 상관 (Spearman)</div></div>
+      <div class="tile"><div class="v num">~45%</div><div class="l">미수집 변수 몫 (개선 여지)</div></div>
+    </div>
+    <div class="imp">
+      <div class="improw"><span class="n">예산</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="val num">0.62</span></div>
+      <div class="improw"><span class="n">축제 기간</span><span class="track"><span class="fill" style="width:16%"></span></span><span class="val num">0.10</span></div>
+      <div class="improw"><span class="n">개최 회차</span><span class="track"><span class="fill" style="width:10%"></span></span><span class="val num">0.06</span></div>
+      <div class="improw"><span class="n">개최 월</span><span class="track"><span class="fill" style="width:6%"></span></span><span class="val num">0.04</span></div>
+      <div class="improw"><span class="n">지역·운영·유형</span><span class="track"><span class="fill" style="width:4%"></span></span><span class="val num">~0.02</span></div>
+    </div>
+    <div class="callout">설명되지 않은 <b>약 45%</b>는 아직 붙이지 않은 변수(날씨·주변인구·K콘텐츠·홍보·경쟁)의
+      몫 — 이것이 곧 <b>추가 데이터 수집의 근거</b>이자 예측력 상승 여지다.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-no">07</span><h2>검증 — 실제 축제로</h2></div>
+    <p class="sec-sub">재개최 축제는 전년 실측을 기준점으로 흥행 조건에 따라 조정한다.
+      보령머드축제에 적용한 결과:</p>
+    <div class="valid">
+      <div class="compare">
+        <div class="b"><div class="v pred num">179만명</div><div class="l">FestCast 예측</div></div>
+        <div class="b"><div class="v num">169만명</div><div class="l">실측 (전년)</div></div>
+        <div class="err">오차 6% · 80% 예측구간(147만~219만) 내</div>
+      </div>
+    </div>
+    <p style="margin-top:18px">단일 숫자가 아니라 <b>확률분포</b>로 예보하고, 수용인원 초과
+      <b>쏠림 위험</b>까지 산출한다 — 과제 9의 "대규모 관광객 쏠림·만족도 저하"를 정면으로 다룬다.</p>
+  </section>
+
+  <section style="border-bottom:none">
+    <div class="sec-head"><span class="sec-no">08</span><h2>한계 &amp; 다음</h2></div>
+    <ul class="clean">
+      <li><b>단년 횡단면</b> — 다년 시계열을 확보하면 성장 추세·시점정합 검증을 강화할 수 있다.</li>
+      <li><b>미수집 변수 조인</b> — 날씨·주변인구·K콘텐츠 검색량·홍보/사전예매를 붙여 R²를 끌어올린다.</li>
+      <li><b>SHAP 처방</b> — 개별 예측을 변수별로 분해해 "일정 옮기면 +N명" 보완 피드백의 근거로.</li>
+      <li><b>동작 데모</b> — 기획안 입력 → 흥행 예보 리포트가 나오는 웹 서비스로 완성.</li>
+    </ul>
+    <div class="foot">FestCast · 축제 흥행 예보 · 2026 관광데이터 활용 공모전 지정과제 9 ·
+      데이터 출처: 문화체육관광부, 한국관광공사 TourAPI, 기상청, 공공데이터포털</div>
+  </section>
+
+</div>
