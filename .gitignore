@@ -29,3 +29,11 @@ Thumbs.db
 *.pkl
 *.joblib
 models/
+
+# --- platform ---
+platform/backend/festcast.db
+*.db
+platform/**/node_modules/
+platform/frontend/.next/
+platform/frontend/out/
+platform/**/.env
