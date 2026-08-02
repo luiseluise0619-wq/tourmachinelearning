@@ -1,20 +1,49 @@
+import os
 import json
 import schemas
+from openai import OpenAI
 
 class GenerativePlanner:
     def __init__(self):
-        # We would initialize OpenAI or Gemini client here.
-        # e.g., self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        pass
+        self.api_key = os.environ.get("OPENAI_API_KEY")
+        if self.api_key:
+            self.client = OpenAI(api_key=self.api_key)
+        else:
+            self.client = None
 
     def generate_plan(self, project: schemas.ProjectCreate, predicted_visitors: int, success_prob: float):
-        # Simulated LLM Call
-        # If we had a real LLM, we would construct a prompt like:
-        # prompt = f"Generate a festival plan for {project.name} in {project.region} with budget {project.expected_budget}. Expected visitors: {predicted_visitors}"
-        # response = self.client.chat.completions.create(model="gpt-4", messages=[{"role": "user", "content": prompt}])
-        # return json.loads(response.choices[0].message.content)
+        if self.client:
+            prompt = f"""
+            Generate a festival plan in JSON format.
+            Project: {project.name}
+            Region: {project.region}
+            Expected Budget: {project.expected_budget} KRW
+            Expected Visitors: {predicted_visitors}
+            Success Probability: {success_prob * 100}%
+            Has Experience: {project.has_experience}
+            Has Celebrity: {project.has_celebrity}
 
-        # Mocking the response for the prototype
+            Return JSON matching this structure exactly (translate values to Korean):
+            {{
+                "concept": "string",
+                "target_audience": "string",
+                "program_plan": [{{"time": "string", "activity": "string"}}],
+                "marketing_strategy": {{"main_channel": "string", "key_message": "string", "budget_allocation": "string"}},
+                "operational_plan": {{"staffing": "string", "safety": "string", "facilities": "string"}},
+                "risk_factors": ["string"]
+            }}
+            """
+            try:
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"}
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                print(f"OpenAI API failed: {e}. Falling back to mock data.")
+
+        # Mocking the response for the prototype / fallback
         target_audience = "20대 및 가족 단위" if project.has_experience else "일반 대중"
         concept = f"{project.region}의 특색을 살린 도심 속 힐링 축제"
 

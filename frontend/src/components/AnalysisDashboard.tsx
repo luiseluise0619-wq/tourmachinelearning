@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -42,6 +42,16 @@ export default function AnalysisDashboard({ projectId }: { projectId: number }) 
   const features = JSON.parse(data.feature_importance);
   const plan = JSON.parse(data.generated_plan);
 
+  // Dummy budget allocation data for the UI enhancement
+  const budgetData = [
+    { name: '프로그램', value: 40 },
+    { name: '운영 및 인건비', value: 30 },
+    { name: '홍보/마케팅', value: 15 },
+    { name: '시설 및 인프라', value: 10 },
+    { name: '예비비', value: 5 },
+  ];
+  const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#6b7280'];
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex justify-end">
@@ -76,6 +86,33 @@ export default function AnalysisDashboard({ projectId }: { projectId: number }) 
                 <Tooltip />
                 <Bar dataKey="importance" fill="#4f46e5" />
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Budget Allocation Pie Chart */}
+        <div>
+          <h3 className="text-xl font-semibold mb-4 border-b pb-2">추천 예산 배분 (Budget Allocation)</h3>
+          <div className="h-64 w-full flex justify-center items-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={budgetData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {budgetData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>

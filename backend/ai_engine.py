@@ -3,13 +3,14 @@ import random
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import schemas
 
 class FestCastModel:
     def __init__(self):
-        self.model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1)
+        self.model = None
         self.is_trained = False
         self.feature_names = [
             'duration_days', 'area_size', 'is_free', 'expected_budget', 'promo_budget',
@@ -64,7 +65,27 @@ class FestCastModel:
             X = df[self.feature_names]
             y = df['total_visitors']
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-            self.model.fit(X_train, y_train)
+
+            # Compare Models
+            models = {
+                'XGBoost': xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1, random_state=42),
+                'RandomForest': RandomForestRegressor(n_estimators=100, random_state=42),
+                'GradientBoosting': GradientBoostingRegressor(n_estimators=100, random_state=42)
+            }
+
+            best_model = None
+            best_mse = float('inf')
+
+            for name, m in models.items():
+                m.fit(X_train, y_train)
+                preds = m.predict(X_test)
+                mse = mean_squared_error(y_test, preds)
+                # print(f"Model {name} MSE: {mse}")
+                if mse < best_mse:
+                    best_mse = mse
+                    best_model = m
+
+            self.model = best_model
             self.is_trained = True
 
     def predict(self, project: schemas.ProjectCreate):
